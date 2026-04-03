@@ -46,6 +46,9 @@
     "rxjs": "^7.8.2",
     "uuid": "^13.0.0"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",
     "@nestjs/schematics": "^11.0.9",
