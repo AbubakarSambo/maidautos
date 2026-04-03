@@ -1,10 +1,13 @@
+import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Bus, LayoutDashboard, MapPin, Route, Car, Users, BookOpen, LogOut, Menu, X, Settings, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { cn } from '@/lib/utils'
 
-const adminNav = [
+type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; end?: boolean }
+
+const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/trips', label: 'Trips', icon: Bus },
   { to: '/admin/bookings', label: 'Bookings', icon: BookOpen },
@@ -13,7 +16,7 @@ const adminNav = [
   { to: '/admin/drivers', label: 'Drivers', icon: UserCheck },
 ]
 
-const superAdminNav = [
+const superAdminNav: NavItem[] = [
   { to: '/admin/users', label: 'Team', icon: Users },
 ]
 
