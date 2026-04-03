@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bus, MapPin, ArrowRight } from 'lucide-react'
 import { tripsApi } from '@/api'
+import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
 
