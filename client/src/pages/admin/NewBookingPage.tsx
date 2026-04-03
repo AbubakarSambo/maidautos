@@ -1,0 +1,428 @@
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { ArrowLeft, Search, User, UserX } from 'lucide-react'
+import { tripsApi, bookingsApi } from '@/api'
+import apiClient from '@/api/client'
+import { SeatGrid } from '@/components/ui/SeatGrid'
+import { formatDateTime, formatCurrency } from '@/lib/utils'
+import { toast } from 'sonner'
+import type { Trip, RouteStop } from '@/types'
+
+type PassengerMode = 'search' | 'guest'
+
+export function AdminNewBookingPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const preselectedTripId = searchParams.get('tripId') || ''
+
+  // Step state
+  const [tripId, setTripId] = useState(preselectedTripId)
+  const [pickupStopId, setPickupStopId] = useState('')
+  const [dropoffStopId, setDropoffStopId] = useState('')
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'PAYSTACK' | 'CASH'>('CASH')
+
+  // Passenger
+  const [passengerMode, setPassengerMode] = useState<PassengerMode>('guest')
+  const [passengerSearch, setPassengerSearch] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedUserName, setSelectedUserName] = useState('')
+  const [guestName, setGuestName] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+
+  // Trip search for admin (if no preselected trip)
+  const [tripDate, setTripDate] = useState(new Date().toISOString().split('T')[0])
+
+  const { data: allTrips = [] } = useQuery<Trip[]>({
+    queryKey: ['admin-trips-for-booking', tripDate],
+    queryFn: () =>
+      tripsApi.findAll({ date: tripDate, status: 'SCHEDULED' }).then((r) =>
+        Array.isArray(r) ? r : []
+      ),
+    enabled: !preselectedTripId,
+  })
+
+  const { data: trip } = useQuery<Trip>({
+    queryKey: ['trip', tripId],
+    queryFn: () => tripsApi.findOne(tripId),
+    enabled: !!tripId,
+  })
+
+  const pickupStop = trip?.route.routeStops.find((rs) => rs.id === pickupStopId)
+  const dropoffStop = trip?.route.routeStops.find((rs) => rs.id === dropoffStopId)
+
+  const { data: seatData } = useQuery({
+    queryKey: ['available-seats', tripId, pickupStopId, dropoffStopId],
+    queryFn: () => tripsApi.getAvailableSeats(tripId, pickupStopId, dropoffStopId),
+    enabled: !!tripId && !!pickupStopId && !!dropoffStopId,
+  })
+
+  // Passenger user search
+  const { data: searchResults = [], isFetching: searching } = useQuery({
+    queryKey: ['user-search', passengerSearch],
+    queryFn: () =>
+      apiClient
+        .get('/users', { params: { role: 'PASSENGER' } })
+        .then((r) =>
+          (r.data.data as any[]).filter(
+            (u) =>
+              u.firstName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
+              u.lastName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
+              u.phone?.includes(passengerSearch) ||
+              u.email?.toLowerCase().includes(passengerSearch.toLowerCase())
+          )
+        ),
+    enabled: passengerMode === 'search' && passengerSearch.length >= 2,
+  })
+
+  // Reset seat when segment changes
+  useEffect(() => setSelectedSeat(null), [pickupStopId, dropoffStopId])
+  // Reset segment when trip changes
+  useEffect(() => { setPickupStopId(''); setDropoffStopId(''); setSelectedSeat(null) }, [tripId])
+
+  const amount =
+    pickupStop && dropoffStop
+      ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
+      : 0
+
+  const isReadyToBook =
+    !!tripId &&
+    !!pickupStopId &&
+    !!dropoffStopId &&
+    !!selectedSeat &&
+    (passengerMode === 'search' ? !!selectedUserId : !!guestPhone || !!guestEmail)
+
+  const { mutate: createBooking, isPending } = useMutation({
+    mutationFn: () =>
+      bookingsApi.create({
+        tripId,
+        seatNumber: selectedSeat!,
+        pickupStopId,
+        dropoffStopId,
+        paymentMethod,
+        ...(passengerMode === 'search' && selectedUserId
+          ? { passengerUserId: selectedUserId }
+          : { guestName: guestName || undefined, guestEmail: guestEmail || undefined, guestPhone: guestPhone || undefined }),
+      }),
+    onSuccess: (booking) => {
+      toast.success(`Booking created — ${booking.ticketCode}`)
+      navigate(`/admin/bookings`)
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Booking failed'),
+  })
+
+  return (
+    <div className="max-w-2xl space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={() => navigate('/admin/bookings')} className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900">New Booking</h1>
+      </div>
+
+      {/* STEP 1 — Trip */}
+      <div className="bg-white rounded-xl border p-5 space-y-4">
+        <h2 className="font-semibold text-gray-900">
+          <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">1</span>
+          Trip
+        </h2>
+
+        {preselectedTripId && trip ? (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+            <p className="font-semibold text-green-800">
+              {trip.route.originStop.name} → {trip.route.destinationStop.name}
+            </p>
+            <p className="text-green-700 mt-0.5">{formatDateTime(trip.departureDateTime)} · {trip.car.make} {trip.car.model}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Date</label>
+              <input
+                type="date"
+                value={tripDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setTripDate(e.target.value)}
+                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Select trip</label>
+              <select
+                value={tripId}
+                onChange={(e) => setTripId(e.target.value)}
+                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Choose a trip...</option>
+                {allTrips.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.route.originStop.name} → {t.route.destinationStop.name} · {formatDateTime(t.departureDateTime)}
+                  </option>
+                ))}
+              </select>
+              {allTrips.length === 0 && tripDate && (
+                <p className="text-xs text-gray-400 mt-1">No scheduled trips on this date.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* STEP 2 — Pickup & Dropoff */}
+      {trip && (
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">
+            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">2</span>
+            Boarding & Alighting Stops
+          </h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Pickup stop *</label>
+              <select
+                value={pickupStopId}
+                onChange={(e) => { setPickupStopId(e.target.value); setDropoffStopId('') }}
+                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Select...</option>
+                {trip.route.routeStops.slice(0, -1).map((rs) => (
+                  <option key={rs.id} value={rs.id}>{rs.stop.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Dropoff stop *</label>
+              <select
+                value={dropoffStopId}
+                onChange={(e) => setDropoffStopId(e.target.value)}
+                disabled={!pickupStopId}
+                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-50"
+              >
+                <option value="">Select...</option>
+                {trip.route.routeStops
+                  .filter((rs) => {
+                    const pickup = trip.route.routeStops.find((r) => r.id === pickupStopId)
+                    return pickup ? rs.order > pickup.order : false
+                  })
+                  .map((rs) => (
+                    <option key={rs.id} value={rs.id}>{rs.stop.name}</option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          {amount > 0 && (
+            <div className="text-sm text-green-700 font-semibold bg-green-50 px-3 py-2 rounded-lg">
+              Fare: {formatCurrency(amount)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* STEP 3 — Seat */}
+      {trip && pickupStopId && dropoffStopId && (
+        <div className="bg-white rounded-xl border p-5">
+          <h2 className="font-semibold text-gray-900 mb-4">
+            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">3</span>
+            Seat Selection
+          </h2>
+          {seatData ? (
+            <SeatGrid
+              carType={trip.car.type}
+              capacity={trip.car.capacity}
+              takenSeats={seatData.taken}
+              selectedSeat={selectedSeat}
+              onSelectSeat={setSelectedSeat}
+            />
+          ) : (
+            <p className="text-gray-400 text-sm">Loading seat map...</p>
+          )}
+        </div>
+      )}
+
+      {/* STEP 4 — Passenger */}
+      {selectedSeat && (
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">
+            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">4</span>
+            Passenger
+          </h2>
+
+          {/* Mode toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setPassengerMode('search'); setSelectedUserId(null); setSelectedUserName('') }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                passengerMode === 'search' ? 'bg-green-50 border-green-400 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5" /> Existing passenger
+            </button>
+            <button
+              onClick={() => { setPassengerMode('guest'); setSelectedUserId(null); setSelectedUserName('') }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                passengerMode === 'guest' ? 'bg-green-50 border-green-400 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <UserX className="w-3.5 h-3.5" /> Walk-in / Guest
+            </button>
+          </div>
+
+          {passengerMode === 'search' ? (
+            <div className="space-y-3">
+              {selectedUserId ? (
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    {selectedUserName[0]}
+                  </div>
+                  <span className="font-medium text-green-800 flex-1">{selectedUserName}</span>
+                  <button
+                    onClick={() => { setSelectedUserId(null); setSelectedUserName('') }}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Search by name or phone</label>
+                  <div className="relative mt-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      value={passengerSearch}
+                      onChange={(e) => setPassengerSearch(e.target.value)}
+                      placeholder="Start typing..."
+                      className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  {passengerSearch.length >= 2 && (
+                    <div className="mt-1 border rounded-lg overflow-hidden">
+                      {searching && (
+                        <p className="px-3 py-2 text-sm text-gray-400">Searching...</p>
+                      )}
+                      {!searching && searchResults.length === 0 && (
+                        <p className="px-3 py-2 text-sm text-gray-400">No passengers found</p>
+                      )}
+                      {searchResults.map((u: any) => (
+                        <button
+                          key={u.id}
+                          onClick={() => {
+                            setSelectedUserId(u.id)
+                            setSelectedUserName(`${u.firstName} ${u.lastName}`)
+                            setPassengerSearch('')
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 text-left border-b last:border-b-0"
+                        >
+                          <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
+                            {u.firstName[0]}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{u.firstName} {u.lastName}</p>
+                            <p className="text-xs text-gray-400">{u.phone || u.email}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Full name</label>
+                <input
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="Passenger's full name"
+                  className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Phone *</label>
+                  <input
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    placeholder="08012345678"
+                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    type="email"
+                    placeholder="For ticket delivery"
+                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* STEP 5 — Payment */}
+      {isReadyToBook && (
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">
+            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">5</span>
+            Payment Method
+          </h2>
+          <div className="flex gap-3">
+            {(['CASH', 'PAYSTACK'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setPaymentMethod(m)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                  paymentMethod === m
+                    ? 'border-green-600 bg-green-50 text-green-700'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {m === 'CASH' ? '💵 Cash' : '💳 Paystack'}
+              </button>
+            ))}
+          </div>
+          {paymentMethod === 'CASH' && (
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              Booking will be marked as paid immediately. Collect cash before the passenger boards.
+            </p>
+          )}
+          {paymentMethod === 'PAYSTACK' && (
+            <p className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+              Booking will be confirmed but marked as pending until payment is completed via Paystack.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Summary + Submit */}
+      {isReadyToBook && (
+        <div className="bg-white rounded-xl border p-5 space-y-4">
+          <h2 className="font-semibold text-gray-900">Summary</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Route</span><span className="font-medium">{pickupStop?.stop.name} → {dropoffStop?.stop.name}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Departure</span><span className="font-medium">{trip && formatDateTime(trip.departureDateTime)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Seat</span><span className="font-bold text-green-600">{selectedSeat}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Passenger</span><span className="font-medium">{selectedUserName || guestName || guestPhone}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-medium">{paymentMethod}</span></div>
+            <div className="flex justify-between pt-2 border-t"><span className="font-semibold">Fare</span><span className="font-bold text-lg text-green-600">{formatCurrency(amount)}</span></div>
+          </div>
+
+          <button
+            onClick={() => createBooking()}
+            disabled={isPending}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-colors"
+          >
+            {isPending ? 'Creating booking...' : `Confirm Booking — ${formatCurrency(amount)}`}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

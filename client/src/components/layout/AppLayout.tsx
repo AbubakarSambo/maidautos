@@ -1,0 +1,111 @@
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Bus, LayoutDashboard, MapPin, Route, Car, Users, BookOpen, LogOut, Menu, X, Settings, UserCheck } from 'lucide-react'
+import { useState } from 'react'
+import { useAuthStore } from '@/stores/auth'
+import { cn } from '@/lib/utils'
+
+const adminNav = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/trips', label: 'Trips', icon: Bus },
+  { to: '/admin/bookings', label: 'Bookings', icon: BookOpen },
+  { to: '/admin/routes', label: 'Routes', icon: Route },
+  { to: '/admin/cars', label: 'Fleet', icon: Car },
+  { to: '/admin/drivers', label: 'Drivers', icon: UserCheck },
+]
+
+const superAdminNav = [
+  { to: '/admin/users', label: 'Team', icon: Users },
+]
+
+export function AppLayout() {
+  const { user, logout } = useAuthStore()
+  const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const nav = user?.role === 'SUPER_ADMIN' ? [...adminNav, ...superAdminNav] : adminNav
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-20 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        'fixed inset-y-0 left-0 z-30 w-64 bg-white border-r flex flex-col transition-transform lg:static lg:translate-x-0',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      )}>
+        <div className="flex items-center gap-2 px-6 py-5 border-b">
+          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <Bus className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-gray-900 text-lg">MaidAutos</span>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          <ul className="space-y-1">
+            {nav.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) => cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-green-50 text-green-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  )}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="border-t p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-sm font-semibold">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.role === 'SUPER_ADMIN' ? 'Super Admin' : `Admin${user?.adminCity ? ` · ${user.adminCity}` : ''}`}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="h-14 bg-white border-b flex items-center px-4 lg:px-6 gap-4">
+          <button
+            className="lg:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <div className="flex-1" />
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,86 @@
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, MapPin, ArrowRight, Bus, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { tripsApi } from '@/api'
+import { formatDateTime, formatCurrency } from '@/lib/utils'
+import { toast } from 'sonner'
+import type { Trip, TripStatus } from '@/types'
+
+const STATUS_COLORS: Record<TripStatus, string> = {
+  SCHEDULED: 'bg-blue-100 text-blue-700',
+  BOARDING: 'bg-yellow-100 text-yellow-700',
+  IN_TRANSIT: 'bg-green-100 text-green-700',
+  COMPLETED: 'bg-gray-100 text-gray-600',
+  CANCELLED: 'bg-red-100 text-red-600',
+}
+
+export function AdminTripsPage() {
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [statusFilter, setStatusFilter] = useState<TripStatus | ''>('')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+
+  const { data: trips = [], isLoading } = useQuery<Trip[]>({
+    queryKey: ['admin-trips', statusFilter, date],
+    queryFn: () => tripsApi.findAll({ status: statusFilter || undefined, date }),
+  })
+
+  const { mutate: updateStatus } = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: TripStatus }) => tripsApi.updateStatus(id, status),
+    onSuccess: () => {
+      toast.success('Status updated')
+      qc.invalidateQueries({ queryKey: ['admin-trips'] })
+    },
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Trips</h1>
+        <button onClick={() => navigate('/admin/trips/new')} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700">
+          <Plus className="w-4 h-4" /> New Trip
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+          <option value="">All statuses</option>
+          {(['SCHEDULED', 'BOARDING', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED'] as TripStatus[]).map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="py-16 text-center text-gray-500">Loading trips...</div>
+      ) : trips.length === 0 ? (
+        <div className="py-16 text-center text-gray-500">No trips found</div>
+      ) : (
+        <div className="space-y-3">
+          {trips.map((trip) => (
+            <div
+              key={trip.id}
+              className="bg-white rounded-xl border p-4 cursor-pointer hover:border-green-300 transition-all"
+              onClick={() => navigate(`/admin/trips/${trip.id}`)}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold">{trip.route.originStop.name}</span>
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <span className="font-semibold">{trip.route.destinationStop.name}</span>
+                <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[trip.status]}`}>{trip.status}</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <span>{formatDateTime(trip.departureDateTime)}</span>
+                <span className="flex items-center gap-1"><Bus className="w-3.5 h-3.5" />{trip.car.make} {trip.car.model}</span>
+                <span className="ml-auto text-gray-400 text-xs">{trip._count?.bookings ?? 0}/{trip.car.capacity} seats</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

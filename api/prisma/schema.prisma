@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  PASSENGER
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum CarType {
+  SEDAN
+  SIENA
+  HIACE
+  COASTER
+  BUS
+}
+
+enum CarStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+}
+
+enum TripStatus {
+  SCHEDULED
+  BOARDING
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+}
+
+enum PaymentMethod {
+  PAYSTACK
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String?  @unique
+  phone           String?  @unique
+  passwordHash    String?  @map("password_hash")
+  firstName       String   @map("first_name")
+  lastName        String   @map("last_name")
+  role            UserRole @default(PASSENGER)
+  adminCity       String?  @map("admin_city")
+  isActive        Boolean  @default(true) @map("is_active")
+  isEmailVerified Boolean  @default(false) @map("is_email_verified")
+  isGuest         Boolean  @default(false) @map("is_guest")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookings          Booking[]          @relation("PassengerBookings")
+  adminBookings     Booking[]          @relation("AdminBookings")
+  tripStatusUpdates TripStatusUpdate[]
+  tokens            Token[]
+
+  @@map("users")
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tokens")
+}
+
+model Stop {
+  id    String @id @default(uuid())
+  name  String @unique
+  state String
+  slug  String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  originRoutes      Route[]            @relation("OriginRoutes")
+  destinationRoutes Route[]            @relation("DestinationRoutes")
+  routeStops        RouteStop[]
+  statusUpdates     TripStatusUpdate[]
+
+  @@map("stops")
+}
+
+model Route {
+  id                       String  @id @default(uuid())
+  originStopId             String  @map("origin_stop_id")
+  destinationStopId        String  @map("destination_stop_id")
+  estimatedDurationMinutes Int     @map("estimated_duration_minutes")
+  isActive                 Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  originStop      Stop        @relation("OriginRoutes", fields: [originStopId], references: [id])
+  destinationStop Stop        @relation("DestinationRoutes", fields: [destinationStopId], references: [id])
+  routeStops      RouteStop[]
+  trips           Trip[]
+
+  @@unique([originStopId, destinationStopId])
+  @@map("routes")
+}
+
+// Ordered stops along a route, including origin (order=0) and destination (order=N)
+// priceFromOrigin = cost to ride from the origin stop to THIS stop
+model RouteStop {
+  id                   String  @id @default(uuid())
+  routeId              String  @map("route_id")
+  stopId               String  @map("stop_id")
+  order                Int
+  distanceFromOriginKm Decimal @map("distance_from_origin_km") @db.Decimal(8, 2)
+  priceFromOrigin      Decimal @map("price_from_origin") @db.Decimal(10, 2)
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stop  Stop  @relation(fields: [stopId], references: [id])
+
+  pickupBookings  Booking[] @relation("PickupStop")
+  dropoffBookings Booking[] @relation("DropoffStop")
+
+  @@unique([routeId, stopId])
+  @@unique([routeId, order])
+  @@index([routeId])
+  @@map("route_stops")
+}
+
+model Car {
+  id          String    @id @default(uuid())
+  plateNumber String    @unique @map("plate_number")
+  make        String
+  model       String
+  year        Int
+  type        CarType
+  capacity    Int
+  hasAC       Boolean   @default(true) @map("has_ac")
+  status      CarStatus @default(ACTIVE)
+  photos      String[]
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trips Trip[]
+
+  @@map("cars")
+}
+
+model Driver {
+  id            String       @id @default(uuid())
+  firstName     String       @map("first_name")
+  lastName      String       @map("last_name")
+  phone         String       @unique
+  email         String?      @unique
+  licenseNumber String       @unique @map("license_number")
+  licenseExpiry DateTime     @map("license_expiry") @db.Date
+  nin           String?      @unique
+  photo         String?
+  status        DriverStatus @default(AVAILABLE)
+  isActive      Boolean      @default(true) @map("is_active")
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trips Trip[]
+
+  @@map("drivers")
+}
+
+model Trip {
+  id                String     @id @default(uuid())
+  routeId           String     @map("route_id")
+  carId             String     @map("car_id")
+  driverId          String     @map("driver_id")
+  departureDateTime DateTime   @map("departure_datetime")
+  status            TripStatus @default(SCHEDULED)
+  priceOverride     Decimal?   @map("price_override") @db.Decimal(10, 2)
+  notes             String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  route         Route              @relation(fields: [routeId], references: [id])
+  car           Car                @relation(fields: [carId], references: [id])
+  driver        Driver             @relation(fields: [driverId], references: [id])
+  bookings      Booking[]
+  statusUpdates TripStatusUpdate[]
+
+  @@index([routeId])
+  @@index([departureDateTime])
+  @@map("trips")
+}
+
+model TripStatusUpdate {
+  id              String   @id @default(uuid())
+  tripId          String   @map("trip_id")
+  stopId          String?  @map("stop_id")
+  checkpointLabel String   @map("checkpoint_label")
+  note            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  createdById     String   @map("created_by_id")
+
+  trip      Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stop      Stop? @relation(fields: [stopId], references: [id])
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  @@index([tripId])
+  @@map("trip_status_updates")
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  tripId             String        @map("trip_id")
+  userId             String?       @map("user_id")
+  guestName          String?       @map("guest_name")
+  guestEmail         String?       @map("guest_email")
+  guestPhone         String?       @map("guest_phone")
+  seatNumber         Int           @map("seat_number")
+  pickupStopId       String        @map("pickup_stop_id")
+  dropoffStopId      String        @map("dropoff_stop_id")
+  amount             Decimal       @db.Decimal(10, 2)
+  paymentMethod      PaymentMethod @map("payment_method")
+  paymentStatus      PaymentStatus @default(PENDING) @map("payment_status")
+  paystackReference  String?       @unique @map("paystack_reference")
+  paystackAccessCode String?       @map("paystack_access_code")
+  paymentUrl         String?       @map("payment_url")
+  ticketCode         String        @unique @map("ticket_code")
+  status             BookingStatus @default(CONFIRMED)
+  bookedByAdminId    String?       @map("booked_by_admin_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trip          Trip      @relation(fields: [tripId], references: [id])
+  user          User?     @relation("PassengerBookings", fields: [userId], references: [id])
+  bookedByAdmin User?     @relation("AdminBookings", fields: [bookedByAdminId], references: [id])
+  pickupStop    RouteStop @relation("PickupStop", fields: [pickupStopId], references: [id])
+  dropoffStop   RouteStop @relation("DropoffStop", fields: [dropoffStopId], references: [id])
+
+  @@index([tripId])
+  @@index([userId])
+  @@index([ticketCode])
+  @@map("bookings")
+}
