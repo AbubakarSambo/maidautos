@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Param, Headers, RawBodyRequest, Req } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PaystackService } from './paystack.service';
 import { Public, CurrentUser } from '../../common';
@@ -13,7 +13,7 @@ export class PaystackController {
     private bookingsService: BookingsService,
   ) {}
 
-  @ApiBearerAuth()
+  @Public()
   @Post('initialize/:bookingId')
   async initialize(@Param('bookingId') bookingId: string, @CurrentUser() user: any) {
     const booking = await this.bookingsService.findOne(bookingId);

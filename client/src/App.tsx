@@ -23,6 +23,7 @@ import {
   AdminCarsPage,
   AdminDriversPage,
   AdminRoutesPage,
+  AdminStopsPage,
   AdminUsersPage,
   AdminNewTripPage,
   AdminNewBookingPage,
@@ -74,6 +75,7 @@ function App() {
               <Route path="/admin/bookings" element={<AdminBookingsPage />} />
               <Route path="/admin/bookings/new" element={<AdminNewBookingPage />} />
               <Route path="/admin/routes" element={<AdminRoutesPage />} />
+              <Route path="/admin/stops" element={<AdminStopsPage />} />
               <Route path="/admin/cars" element={<AdminCarsPage />} />
               <Route path="/admin/drivers" element={<AdminDriversPage />} />
 

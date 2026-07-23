@@ -135,7 +135,7 @@ model Route {
   routeStops      RouteStop[]
   trips           Trip[]
 
-  @@unique([originStopId, destinationStopId])
+  @@index([originStopId, destinationStopId])
   @@map("routes")
 }
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
@@ -36,6 +36,23 @@ export class RoutesController {
   }
 
   @ApiBearerAuth()
+  @Roles('SUPER_ADMIN')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.routesService.remove(id);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Post(':id/stops')
+  addStop(
+    @Param('id') id: string,
+    @Body() data: { stopId: string; distanceFromOriginKm: number; priceFromOrigin: number },
+  ) {
+    return this.routesService.addStop(id, data);
+  }
+
+  @ApiBearerAuth()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @Patch('stops/:routeStopId')
   updateStop(
@@ -43,5 +60,12 @@ export class RoutesController {
     @Body() data: { priceFromOrigin?: number; distanceFromOriginKm?: number },
   ) {
     return this.routesService.updateStop(routeStopId, data);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Delete('stops/:routeStopId')
+  removeStop(@Param('routeStopId') routeStopId: string) {
+    return this.routesService.removeStop(routeStopId);
   }
 }

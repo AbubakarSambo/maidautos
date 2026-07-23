@@ -11,6 +11,7 @@ const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/trips', label: 'Trips', icon: Bus },
   { to: '/admin/bookings', label: 'Bookings', icon: BookOpen },
+  { to: '/admin/stops', label: 'Stops', icon: MapPin },
   { to: '/admin/routes', label: 'Routes', icon: Route },
   { to: '/admin/cars', label: 'Fleet', icon: Car },
   { to: '/admin/drivers', label: 'Drivers', icon: UserCheck },

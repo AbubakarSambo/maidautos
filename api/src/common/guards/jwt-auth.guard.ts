@@ -9,17 +9,30 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+  private isPublic(context: ExecutionContext): boolean {
+    return this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-
-    if (isPublic) return true;
-    return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (!this.isPublic(context)) {
+      return super.canActivate(context) as Promise<boolean>;
+    }
+
+    // Public route: still decode a token if one is present, so req.user is
+    // populated for a logged-in caller, but never require or reject on one.
+    try {
+      await super.canActivate(context);
+    } catch {
+      // no-op — auth is optional on public routes
+    }
+    return true;
+  }
+
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    if (this.isPublic(context)) return user || null;
     if (err || !user) {
       throw err || new UnauthorizedException('Invalid or expired token');
     }

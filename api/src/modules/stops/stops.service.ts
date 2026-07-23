@@ -34,6 +34,10 @@ export class StopsService {
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.stop.delete({ where: { id } });
+    try {
+      return await this.prisma.stop.delete({ where: { id } });
+    } catch {
+      throw new ConflictException('Cannot remove this stop — it is used by one or more routes');
+    }
   }
 }

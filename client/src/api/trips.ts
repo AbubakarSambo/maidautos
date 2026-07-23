@@ -16,6 +16,9 @@ export const tripsApi = {
   create: (data: any) =>
     apiClient.post('/trips', data).then((r) => r.data.data),
 
+  createBulk: (data: any) =>
+    apiClient.post('/trips/bulk', data).then((r) => r.data.data),
+
   update: (id: string, data: any) =>
     apiClient.patch(`/trips/${id}`, data).then((r) => r.data.data),
 

@@ -3,6 +3,12 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+async function upsertRoute(originStopId: string, destinationStopId: string, estimatedDurationMinutes: number) {
+  const existing = await prisma.route.findFirst({ where: { originStopId, destinationStopId } });
+  if (existing) return existing;
+  return prisma.route.create({ data: { originStopId, destinationStopId, estimatedDurationMinutes, isActive: true } });
+}
+
 async function main() {
   console.log('Seeding...');
 
@@ -35,11 +41,7 @@ async function main() {
   // ── Routes ────────────────────────────────────────────────────────────────
 
   // 1. Abuja → Maiduguri (via Kaduna, Zaria, Kano, Bauchi, Gombe)
-  const abujaMaiduguri = await prisma.route.upsert({
-    where: { originStopId_destinationStopId: { originStopId: stops['abuja'].id, destinationStopId: stops['maiduguri'].id } },
-    update: {},
-    create: { originStopId: stops['abuja'].id, destinationStopId: stops['maiduguri'].id, estimatedDurationMinutes: 780, isActive: true },
-  });
+  const abujaMaiduguri = await upsertRoute(stops['abuja'].id, stops['maiduguri'].id, 780);
   const abujaMaiduguriStops = [
     { slug: 'abuja',     order: 0, distanceKm: 0,   price: 0 },
     { slug: 'kaduna',    order: 1, distanceKm: 185,  price: 15000 },
@@ -58,11 +60,7 @@ async function main() {
   }
 
   // 2. Abuja → Kano (direct via Kaduna, Zaria)
-  const abujaKano = await prisma.route.upsert({
-    where: { originStopId_destinationStopId: { originStopId: stops['abuja'].id, destinationStopId: stops['kano'].id } },
-    update: {},
-    create: { originStopId: stops['abuja'].id, destinationStopId: stops['kano'].id, estimatedDurationMinutes: 360, isActive: true },
-  });
+  const abujaKano = await upsertRoute(stops['abuja'].id, stops['kano'].id, 360);
   const abujaKanoStops = [
     { slug: 'abuja',  order: 0, distanceKm: 0,   price: 0 },
     { slug: 'kaduna', order: 1, distanceKm: 185,  price: 15000 },
@@ -78,11 +76,7 @@ async function main() {
   }
 
   // 3. Abuja → Jos (via Lafia)
-  const abujaJos = await prisma.route.upsert({
-    where: { originStopId_destinationStopId: { originStopId: stops['abuja'].id, destinationStopId: stops['jos'].id } },
-    update: {},
-    create: { originStopId: stops['abuja'].id, destinationStopId: stops['jos'].id, estimatedDurationMinutes: 240, isActive: true },
-  });
+  const abujaJos = await upsertRoute(stops['abuja'].id, stops['jos'].id, 240);
   const abujaJosStops = [
     { slug: 'abuja', order: 0, distanceKm: 0,   price: 0 },
     { slug: 'lafia', order: 1, distanceKm: 130,  price: 10000 },
@@ -97,11 +91,7 @@ async function main() {
   }
 
   // 4. Kano → Maiduguri (via Dutse, Azare, Gombe)
-  const kanoMaiduguri = await prisma.route.upsert({
-    where: { originStopId_destinationStopId: { originStopId: stops['kano'].id, destinationStopId: stops['maiduguri'].id } },
-    update: {},
-    create: { originStopId: stops['kano'].id, destinationStopId: stops['maiduguri'].id, estimatedDurationMinutes: 420, isActive: true },
-  });
+  const kanoMaiduguri = await upsertRoute(stops['kano'].id, stops['maiduguri'].id, 420);
   const kanoMaiduguriStops = [
     { slug: 'kano',      order: 0, distanceKm: 0,   price: 0 },
     { slug: 'dutse',     order: 1, distanceKm: 130,  price: 10000 },
@@ -118,11 +108,7 @@ async function main() {
   }
 
   // 5. Abuja → Bauchi (via Lafia, Jos)
-  const abujaBauchi = await prisma.route.upsert({
-    where: { originStopId_destinationStopId: { originStopId: stops['abuja'].id, destinationStopId: stops['bauchi'].id } },
-    update: {},
-    create: { originStopId: stops['abuja'].id, destinationStopId: stops['bauchi'].id, estimatedDurationMinutes: 360, isActive: true },
-  });
+  const abujaBauchi = await upsertRoute(stops['abuja'].id, stops['bauchi'].id, 360);
   const abujaBauchiStops = [
     { slug: 'abuja',  order: 0, distanceKm: 0,   price: 0 },
     { slug: 'lafia',  order: 1, distanceKm: 130,  price: 10000 },

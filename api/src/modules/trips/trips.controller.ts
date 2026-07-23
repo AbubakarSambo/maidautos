@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
+import { CreateBulkTripsDto } from './dto/create-bulk-trips.dto';
 import { AddStatusUpdateDto } from './dto/add-status-update.dto';
 import { Public, Roles, CurrentUser } from '../../common';
 import { TripStatus } from '@prisma/client';
@@ -54,6 +55,13 @@ export class TripsController {
   @Post()
   create(@Body() dto: CreateTripDto) {
     return this.tripsService.create(dto);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Post('bulk')
+  createBulk(@Body() dto: CreateBulkTripsDto) {
+    return this.tripsService.createBulk(dto);
   }
 
   @ApiBearerAuth()

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft, CreditCard, Banknote } from 'lucide-react'
-import { bookingsApi } from '@/api'
+import { bookingsApi, paystackApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -14,6 +14,12 @@ const guestSchema = z.object({
   guestName: z.string().min(2, 'Full name required'),
   guestEmail: z.string().email('Valid email required').or(z.literal('')).optional(),
   guestPhone: z.string().min(10, 'Valid phone required'),
+})
+
+const authedSchema = z.object({
+  guestName: z.string().optional(),
+  guestEmail: z.string().optional(),
+  guestPhone: z.string().optional(),
 })
 
 type GuestForm = z.infer<typeof guestSchema>
@@ -32,7 +38,7 @@ export function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'PAYSTACK' | 'CASH'>('PAYSTACK')
 
   const { register, handleSubmit, formState: { errors } } = useForm<GuestForm>({
-    resolver: zodResolver(guestSchema),
+    resolver: zodResolver(isAuthenticated ? authedSchema : guestSchema),
   })
 
   const { mutate: createBooking, isPending } = useMutation({
@@ -47,22 +53,15 @@ export function CheckoutPage() {
       }),
     onSuccess: async (booking) => {
       if (paymentMethod === 'PAYSTACK') {
-        // Initialize Paystack payment
         try {
-          const { authorizationUrl } = await import('@/api').then((m) =>
-            m.bookingsApi.findOne(booking.id).then(() =>
-              fetch(`/api/v1/paystack/initialize/${booking.id}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-                },
-              }).then((r) => r.json()).then((d) => d.data)
-            )
-          )
-          if (authorizationUrl) window.location.href = authorizationUrl
-        } catch {
-          navigate(`/booking/confirmation/${booking.ticketCode}`)
+          const { authorizationUrl } = await paystackApi.initialize(booking.id)
+          if (authorizationUrl) {
+            window.location.href = authorizationUrl
+          } else {
+            toast.error('Could not start payment — please try again or pay cash')
+          }
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || 'Could not start payment — please try again or pay cash')
         }
       } else {
         navigate(`/booking/confirmation/${booking.ticketCode}`)

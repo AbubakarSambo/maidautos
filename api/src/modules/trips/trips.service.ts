@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTripDto } from './dto/create-trip.dto';
+import { CreateBulkTripsDto } from './dto/create-bulk-trips.dto';
 import { AddStatusUpdateDto } from './dto/add-status-update.dto';
 import { TripStatus } from '@prisma/client';
 
@@ -159,6 +160,46 @@ export class TripsService {
         driver: true,
       },
     });
+  }
+
+  async createBulk(dto: CreateBulkTripsDto) {
+    const [sy, sm, sd] = dto.startDate.split('-').map(Number);
+    const [ey, em, ed] = dto.endDate.split('-').map(Number);
+    const cursor = new Date(Date.UTC(sy, sm - 1, sd));
+    const endUTC = new Date(Date.UTC(ey, em - 1, ed));
+    if (endUTC < cursor) throw new BadRequestException('endDate must be on or after startDate');
+
+    const daysSet = new Set(dto.daysOfWeek);
+    const tripsToCreate: {
+      routeId: string;
+      carId: string;
+      driverId: string;
+      departureDateTime: Date;
+      priceOverride?: number;
+      notes?: string;
+    }[] = [];
+
+    while (cursor <= endUTC) {
+      if (daysSet.has(cursor.getUTCDay())) {
+        const dateStr = cursor.toISOString().slice(0, 10);
+        tripsToCreate.push({
+          routeId: dto.routeId,
+          carId: dto.carId,
+          driverId: dto.driverId,
+          departureDateTime: new Date(`${dateStr}T${dto.departureTime}:00`),
+          priceOverride: dto.priceOverride,
+          notes: dto.notes,
+        });
+      }
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    if (tripsToCreate.length === 0) {
+      throw new BadRequestException('No dates in this range match the selected days of week');
+    }
+
+    await this.prisma.trip.createMany({ data: tripsToCreate });
+    return { count: tripsToCreate.length };
   }
 
   async update(id: string, dto: Partial<CreateTripDto>) {
