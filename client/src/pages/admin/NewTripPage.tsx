@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import { routesApi, carsApi, driversApi, tripsApi } from '@/api'
 import { formatDuration } from '@/lib/utils'
@@ -20,34 +18,22 @@ const DAYS = [
   { value: 0, label: 'Sun' },
 ]
 
-const baseSchema = {
-  routeId: z.string().min(1, 'Select a route'),
-  carId: z.string().min(1, 'Select a car'),
-  driverId: z.string().min(1, 'Select a driver'),
-  priceOverride: z.string().optional(),
-  notes: z.string().optional(),
+type Form = {
+  routeId: string
+  carId: string
+  driverId: string
+  departureDateTime: string
+  startDate: string
+  endDate: string
+  departureTime: string
+  priceOverride: string
+  notes: string
 }
-
-const singleSchema = z.object({
-  ...baseSchema,
-  departureDateTime: z.string().min(1, 'Set a departure date and time'),
-})
-
-const recurringSchema = z.object({
-  ...baseSchema,
-  startDate: z.string().min(1, 'Set a start date'),
-  endDate: z.string().min(1, 'Set an end date'),
-  departureTime: z.string().min(1, 'Set a departure time'),
-})
-
-type SingleForm = z.infer<typeof singleSchema>
-type RecurringForm = z.infer<typeof recurringSchema>
 
 export function AdminNewTripPage() {
   const navigate = useNavigate()
   const [mode, setMode] = useState<'single' | 'recurring'>('single')
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
-  const [daysError, setDaysError] = useState('')
 
   const { data: routes = [] } = useQuery<Route[]>({
     queryKey: ['routes'],
@@ -62,10 +48,7 @@ export function AdminNewTripPage() {
     queryFn: driversApi.findAvailable,
   })
 
-  const singleForm = useForm<SingleForm>({ resolver: zodResolver(singleSchema) })
-  const recurringForm = useForm<RecurringForm>({ resolver: zodResolver(recurringSchema) })
-  const form = mode === 'single' ? singleForm : recurringForm
-  const { register, handleSubmit, watch, formState: { errors } } = form
+  const { register, handleSubmit, watch, setError, clearErrors, formState: { errors } } = useForm<Form>()
 
   const selectedRouteId = watch('routeId')
   const selectedCarId = watch('carId')
@@ -73,10 +56,14 @@ export function AdminNewTripPage() {
   const selectedCar = cars.find((c) => c.id === selectedCarId)
 
   const { mutate: createSingle, isPending: creatingSingle } = useMutation({
-    mutationFn: (data: SingleForm) =>
+    mutationFn: (data: Form) =>
       tripsApi.create({
-        ...data,
+        routeId: data.routeId,
+        carId: data.carId,
+        driverId: data.driverId,
+        departureDateTime: data.departureDateTime,
         priceOverride: data.priceOverride ? Number(data.priceOverride) : undefined,
+        notes: data.notes || undefined,
       }),
     onSuccess: (trip) => {
       toast.success('Trip created')
@@ -86,7 +73,7 @@ export function AdminNewTripPage() {
   })
 
   const { mutate: createRecurring, isPending: creatingRecurring } = useMutation({
-    mutationFn: (data: RecurringForm) =>
+    mutationFn: (data: Form) =>
       tripsApi.createBulk({
         routeId: data.routeId,
         carId: data.carId,
@@ -96,7 +83,7 @@ export function AdminNewTripPage() {
         daysOfWeek,
         departureTime: data.departureTime,
         priceOverride: data.priceOverride ? Number(data.priceOverride) : undefined,
-        notes: data.notes,
+        notes: data.notes || undefined,
       }),
     onSuccess: (result) => {
       toast.success(`${result.count} trip${result.count === 1 ? '' : 's'} created`)
@@ -105,14 +92,23 @@ export function AdminNewTripPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create trips'),
   })
 
-  const onSubmit = (d: SingleForm | RecurringForm) => {
-    if (mode === 'recurring' && daysOfWeek.length === 0) {
-      setDaysError('Select at least one day of the week')
-      return
+  const onSubmit = (d: Form) => {
+    if (!d.routeId) return setError('routeId', { message: 'Select a route' })
+    if (!d.carId) return setError('carId', { message: 'Select a car' })
+    if (!d.driverId) return setError('driverId', { message: 'Select a driver' })
+
+    if (mode === 'single') {
+      if (!d.departureDateTime) return setError('departureDateTime', { message: 'Set a departure date and time' })
+      clearErrors()
+      createSingle(d)
+    } else {
+      if (!d.startDate) return setError('startDate', { message: 'Set a start date' })
+      if (!d.endDate) return setError('endDate', { message: 'Set an end date' })
+      if (!d.departureTime) return setError('departureTime', { message: 'Set a departure time' })
+      if (daysOfWeek.length === 0) return setError('startDate', { message: 'Select at least one day of the week below' })
+      clearErrors()
+      createRecurring(d)
     }
-    setDaysError('')
-    if (mode === 'single') createSingle(d as SingleForm)
-    else createRecurring(d as RecurringForm)
   }
 
   const toggleDay = (value: number) => {
@@ -196,13 +192,13 @@ export function AdminNewTripPage() {
             <div>
               <label className="text-sm font-medium text-gray-700">Departure date & time *</label>
               <input
-                {...register('departureDateTime' as any)}
+                {...register('departureDateTime')}
                 type="datetime-local"
                 min={minDateTime}
                 className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
-              {(errors as any).departureDateTime && (
-                <p className="text-red-500 text-xs mt-1">{(errors as any).departureDateTime.message}</p>
+              {errors.departureDateTime && (
+                <p className="text-red-500 text-xs mt-1">{errors.departureDateTime.message}</p>
               )}
             </div>
           ) : (
@@ -211,22 +207,22 @@ export function AdminNewTripPage() {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Start date *</label>
                   <input
-                    {...register('startDate' as any)}
+                    {...register('startDate')}
                     type="date"
                     min={minDate}
                     className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
-                  {(errors as any).startDate && <p className="text-red-500 text-xs mt-1">{(errors as any).startDate.message}</p>}
+                  {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">End date *</label>
                   <input
-                    {...register('endDate' as any)}
+                    {...register('endDate')}
                     type="date"
                     min={minDate}
                     className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
-                  {(errors as any).endDate && <p className="text-red-500 text-xs mt-1">{(errors as any).endDate.message}</p>}
+                  {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate.message}</p>}
                 </div>
               </div>
 
@@ -248,17 +244,16 @@ export function AdminNewTripPage() {
                     </button>
                   ))}
                 </div>
-                {daysError && <p className="text-red-500 text-xs mt-1">{daysError}</p>}
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Departure time *</label>
                 <input
-                  {...register('departureTime' as any)}
+                  {...register('departureTime')}
                   type="time"
                   className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                {(errors as any).departureTime && <p className="text-red-500 text-xs mt-1">{(errors as any).departureTime.message}</p>}
+                {errors.departureTime && <p className="text-red-500 text-xs mt-1">{errors.departureTime.message}</p>}
               </div>
             </>
           )}

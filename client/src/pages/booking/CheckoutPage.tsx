@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft, CreditCard, Banknote } from 'lucide-react'
 import { bookingsApi, paystackApi } from '@/api'
@@ -10,19 +8,11 @@ import { useAuthStore } from '@/stores/auth'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const guestSchema = z.object({
-  guestName: z.string().min(2, 'Full name required'),
-  guestEmail: z.string().email('Valid email required').or(z.literal('')).optional(),
-  guestPhone: z.string().min(10, 'Valid phone required'),
-})
-
-const authedSchema = z.object({
-  guestName: z.string().optional(),
-  guestEmail: z.string().optional(),
-  guestPhone: z.string().optional(),
-})
-
-type GuestForm = z.infer<typeof guestSchema>
+type GuestForm = {
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+}
 
 export function CheckoutPage() {
   const [searchParams] = useSearchParams()
@@ -37,9 +27,7 @@ export function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<'PAYSTACK' | 'CASH'>('PAYSTACK')
 
-  const { register, handleSubmit, formState: { errors } } = useForm<GuestForm>({
-    resolver: zodResolver(isAuthenticated ? authedSchema : guestSchema),
-  })
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<GuestForm>()
 
   const { mutate: createBooking, isPending } = useMutation({
     mutationFn: (guestData?: GuestForm) =>
@@ -72,7 +60,20 @@ export function CheckoutPage() {
     },
   })
 
-  const onSubmit = (data: GuestForm) => createBooking(isAuthenticated ? undefined : data)
+  const onSubmit = (data: GuestForm) => {
+    if (!isAuthenticated) {
+      if (!data.guestName || data.guestName.trim().length < 2) {
+        return setError('guestName', { message: 'Full name required' })
+      }
+      if (!data.guestPhone || data.guestPhone.trim().length < 10) {
+        return setError('guestPhone', { message: 'Valid phone required' })
+      }
+      if (data.guestEmail && !/^\S+@\S+\.\S+$/.test(data.guestEmail)) {
+        return setError('guestEmail', { message: 'Valid email required' })
+      }
+    }
+    createBooking(isAuthenticated ? undefined : data)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
