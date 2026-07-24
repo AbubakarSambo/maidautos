@@ -5,6 +5,10 @@ import { CreateBulkTripsDto } from './dto/create-bulk-trips.dto';
 import { AddStatusUpdateDto } from './dto/add-status-update.dto';
 import { TripStatus } from '@prisma/client';
 
+// Must match PENDING_PAYMENT_HOLD_MINUTES in bookings.service.ts — a booking
+// still awaiting online payment only holds its seat for this long.
+const PENDING_PAYMENT_HOLD_MINUTES = 15;
+
 @Injectable()
 export class TripsService {
   constructor(private prisma: PrismaService) {}
@@ -106,7 +110,7 @@ export class TripsService {
         statusUpdates: { include: { stop: true, createdBy: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } },
         bookings: {
           where: { status: { in: ['CONFIRMED', 'COMPLETED'] } },
-          select: { seatNumber: true, pickupStopId: true, dropoffStopId: true, status: true, paymentStatus: true },
+          select: { seatNumber: true, pickupStopId: true, dropoffStopId: true, status: true, paymentStatus: true, createdAt: true },
         },
       },
     });
@@ -128,8 +132,11 @@ export class TripsService {
     // Overlap: booking.pickup.order < requested.dropoff.order AND booking.dropoff.order > requested.pickup.order
     const routeStopOrderMap = new Map(trip.route.routeStops.map((rs) => [rs.id, rs.order]));
 
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
     const takenSeats = new Set<number>();
     for (const booking of trip.bookings) {
+      // An expired payment hold (still PENDING past the hold window) no longer blocks the seat.
+      if (booking.paymentStatus === 'PENDING' && booking.createdAt < holdCutoff) continue;
       const bPickupOrder = routeStopOrderMap.get(booking.pickupStopId) ?? -1;
       const bDropoffOrder = routeStopOrderMap.get(booking.dropoffStopId) ?? -1;
       const overlaps = bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;

@@ -10,6 +10,10 @@ import { EmailService } from '../email/email.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import * as crypto from 'crypto';
 
+// A booking awaiting online payment holds its seat for this long before the
+// hold expires and the seat becomes bookable again (abandoned checkouts).
+const PENDING_PAYMENT_HOLD_MINUTES = 15;
+
 @Injectable()
 export class BookingsService {
   constructor(
@@ -121,20 +125,26 @@ export class BookingsService {
     if (!pickupStop || !dropoffStop) throw new BadRequestException('Invalid stops for this trip');
     if (pickupStop.order >= dropoffStop.order) throw new BadRequestException('Pickup must come before dropoff');
 
-    // Check seat availability for the segment
+    // Check seat availability for the segment. A booking still awaiting online
+    // payment only holds its seat for PENDING_PAYMENT_HOLD_MINUTES — after that
+    // the hold expires and the seat is bookable again.
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
     const routeStopOrderMap = new Map(trip.route.routeStops.map((rs) => [rs.id, rs.order]));
-    const conflictingBooking = await this.prisma.booking.findFirst({
+    const seatBookings = await this.prisma.booking.findMany({
       where: {
         tripId: dto.tripId,
         seatNumber: dto.seatNumber,
         status: { in: ['CONFIRMED', 'COMPLETED'] },
+        OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
       },
     });
+    const conflictingBooking = seatBookings.find((b) => {
+      const bPickupOrder = routeStopOrderMap.get(b.pickupStopId) ?? -1;
+      const bDropoffOrder = routeStopOrderMap.get(b.dropoffStopId) ?? -1;
+      return bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;
+    });
     if (conflictingBooking) {
-      const bPickupOrder = routeStopOrderMap.get(conflictingBooking.pickupStopId) ?? -1;
-      const bDropoffOrder = routeStopOrderMap.get(conflictingBooking.dropoffStopId) ?? -1;
-      const overlaps = bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;
-      if (overlaps) throw new ConflictException(`Seat ${dto.seatNumber} is already booked for this segment`);
+      throw new ConflictException(`Seat ${dto.seatNumber} is already booked for this segment`);
     }
 
     // Calculate amount: priceFromOrigin[dropoff] - priceFromOrigin[pickup]
