@@ -23,6 +23,8 @@ export class TripsService {
       where.departureDateTime = { gte: d, lt: next };
     }
 
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
+
     return this.prisma.trip.findMany({
       where,
       include: {
@@ -36,7 +38,16 @@ export class TripsService {
         car: true,
         driver: true,
         statusUpdates: { orderBy: { createdAt: 'desc' }, take: 1 },
-        _count: { select: { bookings: true } },
+        _count: {
+          select: {
+            bookings: {
+              where: {
+                status: { in: ['CONFIRMED', 'COMPLETED'] },
+                OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
+              },
+            },
+          },
+        },
       },
       orderBy: { departureDateTime: 'asc' },
     });

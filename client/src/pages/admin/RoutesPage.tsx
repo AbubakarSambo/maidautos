@@ -6,7 +6,7 @@ import { routesApi, stopsApi } from '@/api'
 import { formatDuration, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth'
-import type { Route, Stop } from '@/types'
+import type { Route, RouteStop, Stop } from '@/types'
 
 type RouteStopForm = { stopId: string; distanceFromOriginKm: string; priceFromOrigin: string }
 type RouteForm = {
@@ -52,6 +52,61 @@ function AddStopRow({ route, stops, onDone }: { route: Route; stops: Stop[]; onD
       </button>
       <button onClick={onDone} className="p-2 text-gray-400 hover:text-gray-600">
         <Check className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+function EditableStopRow({ rs }: { rs: RouteStop }) {
+  const qc = useQueryClient()
+  const [editing, setEditing] = useState(false)
+  const [distance, setDistance] = useState(String(rs.distanceFromOriginKm))
+  const [price, setPrice] = useState(String(rs.priceFromOrigin))
+
+  const { mutate: save, isPending } = useMutation({
+    mutationFn: () => routesApi.updateStop(rs.id, { distanceFromOriginKm: Number(distance), priceFromOrigin: Number(price) }),
+    onSuccess: () => {
+      toast.success('Stop pricing updated')
+      qc.invalidateQueries({ queryKey: ['routes'] })
+      setEditing(false)
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update stop'),
+  })
+
+  if (!editing) {
+    return (
+      <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-3 hover:bg-gray-50 rounded px-1 -mx-1">
+        <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
+        <span className="text-green-600 font-medium">{formatCurrency(rs.priceFromOrigin)}</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        value={distance}
+        onChange={(e) => setDistance(e.target.value)}
+        type="number"
+        className="w-20 px-2 py-1 border rounded text-xs"
+      />
+      <span className="text-gray-400 text-xs">km</span>
+      <input
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        type="number"
+        className="w-24 px-2 py-1 border rounded text-xs"
+      />
+      <button
+        disabled={isPending}
+        onClick={() => save()}
+        className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+        title="Save"
+      >
+        <Check className="w-3.5 h-3.5" />
+      </button>
+      <button onClick={() => { setEditing(false); setDistance(String(rs.distanceFromOriginKm)); setPrice(String(rs.priceFromOrigin)) }} className="p-1 text-gray-400 hover:text-red-600" title="Cancel">
+        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   )
@@ -252,8 +307,14 @@ export function AdminRoutesPage() {
                       <div key={rs.id} className="flex items-center gap-3 text-sm pl-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
                         <span className="text-gray-700 flex-1">{rs.stop.name}</span>
-                        <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
-                        <span className="text-green-600 font-medium">{formatCurrency(rs.priceFromOrigin)}</span>
+                        {isEditing ? (
+                          <EditableStopRow rs={rs} />
+                        ) : (
+                          <>
+                            <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
+                            <span className="text-green-600 font-medium">{formatCurrency(rs.priceFromOrigin)}</span>
+                          </>
+                        )}
                         {isEditing && !isEndpoint && (
                           <button
                             onClick={() => { if (confirm(`Remove ${rs.stop.name} from this route?`)) removeStop(rs.id) }}
