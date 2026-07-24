@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu,
+  MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu, ChevronDown,
   ShieldCheck, Armchair, Star, Banknote, Ticket, Share2, Globe,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
@@ -62,15 +62,41 @@ const TESTIMONIALS = [
 
 export function SearchPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [searched, setSearched] = useState(false)
+  const appliedIncomingParams = useRef(false)
 
   const { data: stops = [] } = useQuery<Stop[]>({
     queryKey: ['stops'],
     queryFn: stopsApi.findAll,
   })
+
+  // Carry From/To/Date over from the marketing site's search widget (?from=Abuja&to=Kaduna&date=...)
+  useEffect(() => {
+    if (appliedIncomingParams.current || stops.length === 0) return
+    appliedIncomingParams.current = true
+
+    const fromName = searchParams.get('from')
+    const toName = searchParams.get('to')
+    const dateParam = searchParams.get('date')
+
+    const matchedFrom = fromName ? stops.find((s) => s.name.toLowerCase() === fromName.toLowerCase()) : undefined
+    const matchedTo = toName ? stops.find((s) => s.name.toLowerCase() === toName.toLowerCase()) : undefined
+
+    if (matchedFrom) setFrom(matchedFrom.id)
+    if (matchedTo) setTo(matchedTo.id)
+    if (dateParam) setDate(dateParam)
+
+    if (matchedFrom && matchedTo && matchedFrom.id !== matchedTo.id) {
+      setSearched(true)
+      requestAnimationFrame(() => {
+        document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })
+      })
+    }
+  }, [stops, searchParams])
 
   const { data: results = [], isLoading } = useQuery<Trip[]>({
     queryKey: ['trips-search', from, to, date],
@@ -152,12 +178,12 @@ export function SearchPage() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0 md:divide-x divide-gray-100">
               <div className="px-4 py-3 md:px-6 flex flex-col items-start border border-gray-200 rounded-xl md:border-0 md:rounded-none">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Departure</label>
-                <div className="flex items-center gap-2 w-full">
+                <div className="relative flex items-center gap-2 w-full">
                   <MapPin className="w-5 h-5 text-green-600 shrink-0" />
                   <select
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
-                    className="w-full bg-transparent border-none p-0 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
+                    className="w-full bg-transparent border-none p-0 pr-5 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
                     required
                   >
                     <option value="">Select departure</option>
@@ -165,17 +191,18 @@ export function SearchPage() {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
+                  <ChevronDown className="w-4 h-4 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <div className="px-4 py-3 md:px-6 flex flex-col items-start border border-gray-200 rounded-xl md:border-0 md:rounded-none">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Destination</label>
-                <div className="flex items-center gap-2 w-full">
+                <div className="relative flex items-center gap-2 w-full">
                   <MapPin className="w-5 h-5 text-green-600 shrink-0" />
                   <select
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
-                    className="w-full bg-transparent border-none p-0 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
+                    className="w-full bg-transparent border-none p-0 pr-5 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
                     required
                   >
                     <option value="">Select destination</option>
@@ -183,6 +210,7 @@ export function SearchPage() {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
+                  <ChevronDown className="w-4 h-4 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 

@@ -200,6 +200,12 @@ export class BookingsService {
       },
     });
 
+    // Cash bookings are marked PAID immediately, so the ticket is issued right away.
+    // Paystack bookings only get their email once confirmPaystackPayment() fires.
+    if (booking.paymentStatus === 'PAID') {
+      this.sendTicketConfirmationEmail(booking).catch(() => {});
+    }
+
     return booking;
   }
 
@@ -240,12 +246,54 @@ export class BookingsService {
   }
 
   async confirmPaystackPayment(reference: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { paystackReference: reference } });
+    const booking = await this.prisma.booking.findUnique({
+      where: { paystackReference: reference },
+      include: {
+        trip: { include: { route: { include: { originStop: true, destinationStop: true } }, car: true } },
+        pickupStop: { include: { stop: true } },
+        dropoffStop: { include: { stop: true } },
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
     if (!booking) throw new NotFoundException('Booking not found for this payment reference');
 
-    return this.prisma.booking.update({
+    // Both the Paystack webhook and the browser-return verify call land here for
+    // the same reference — only send the ticket email the first time it's marked PAID.
+    const alreadyPaid = booking.paymentStatus === 'PAID';
+
+    const updated = await this.prisma.booking.update({
       where: { id: booking.id },
       data: { paymentStatus: 'PAID' },
+    });
+
+    if (!alreadyPaid) {
+      this.sendTicketConfirmationEmail(booking).catch(() => {});
+    }
+
+    return updated;
+  }
+
+  private async sendTicketConfirmationEmail(booking: {
+    ticketCode: string;
+    seatNumber: number;
+    amount: any;
+    guestName?: string | null;
+    guestEmail?: string | null;
+    user?: { firstName: string; email: string } | null;
+    trip: { departureDateTime: Date };
+    pickupStop: { stop: { name: string } };
+    dropoffStop: { stop: { name: string } };
+  }) {
+    const email = booking.user?.email || booking.guestEmail;
+    if (!email) return;
+    const firstName = booking.user?.firstName || booking.guestName || 'Passenger';
+
+    await this.emailService.sendTicketEmail(email, firstName, booking.ticketCode, {
+      from: booking.pickupStop.stop.name,
+      to: booking.dropoffStop.stop.name,
+      departure: booking.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }),
+      seatNumber: booking.seatNumber,
+      amount: Number(booking.amount).toLocaleString('en-NG'),
     });
   }
 

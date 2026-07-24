@@ -61,7 +61,7 @@ export class EmailService {
       seatNumber: number;
       amount: string;
     },
-    pdfBuffer: Buffer,
+    pdfBuffer?: Buffer,
   ) {
     await this.resend.emails.send({
       from: this.fromEmail,
@@ -78,15 +78,19 @@ export class EmailService {
             <tr><td style="padding:8px;color:#6b7280">Seat</td><td style="padding:8px">${ticketDetails.seatNumber}</td></tr>
             <tr><td style="padding:8px;color:#6b7280">Amount Paid</td><td style="padding:8px">₦${ticketDetails.amount}</td></tr>
           </table>
-          <p style="color:#6b7280;font-size:14px">Your ticket is attached as a PDF. Please keep it for reference.</p>
+          <p style="color:#6b7280;font-size:14px">${pdfBuffer ? 'Your ticket is attached as a PDF. Please keep it for reference.' : `Show this email or your ticket code (${ticketCode}) at boarding.`}</p>
         </div>
       `,
-      attachments: [
-        {
-          filename: `ticket-${ticketCode}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
+      ...(pdfBuffer
+        ? {
+            attachments: [
+              {
+                filename: `ticket-${ticketCode}.pdf`,
+                content: pdfBuffer,
+              },
+            ],
+          }
+        : {}),
     });
   }
 
