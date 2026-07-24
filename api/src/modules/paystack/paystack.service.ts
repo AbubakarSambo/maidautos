@@ -55,7 +55,20 @@ export class PaystackService {
     });
     const data = await response.json() as any;
     if (!data.status) throw new BadRequestException('Payment verification failed');
-    return data.data;
+
+    // Normally the webhook confirms payment asynchronously, but it may not have
+    // arrived yet by the time the customer's browser returns from Paystack — so
+    // confirm synchronously here too (idempotent) and hand back the ticket code.
+    let booking: { ticketCode: string; id: string } | null = null;
+    if (data.data.status === 'success') {
+      try {
+        booking = await this.bookingsService.confirmPaystackPayment(reference);
+      } catch (err) {
+        this.logger.error(`Failed to confirm payment for ${reference}: ${err.message}`);
+      }
+    }
+
+    return { ...data.data, ticketCode: booking?.ticketCode ?? null, bookingId: booking?.id ?? null };
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {

@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { paystackApi } from '@/api'
 
 export function PaymentCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const reference = searchParams.get('reference') || searchParams.get('trxref')
-  const bookingId = searchParams.get('bookingId')
 
   useEffect(() => {
     if (!reference) {
@@ -13,19 +13,11 @@ export function PaymentCallbackPage() {
       return
     }
 
-    // Verify payment then redirect to confirmation
-    fetch(`/api/v1/paystack/verify/${reference}`)
-      .then((r) => r.json())
+    paystackApi
+      .verify(reference)
       .then((data) => {
-        if (data.data?.metadata?.bookingId || bookingId) {
-          const id = data.data?.metadata?.bookingId || bookingId
-          // Fetch the booking to get ticket code
-          fetch(`/api/v1/bookings/${id}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-          })
-            .then((r) => r.json())
-            .then((b) => navigate(`/booking/confirmation/${b.data?.ticketCode || ''}`, { replace: true }))
-            .catch(() => navigate('/'))
+        if (data.ticketCode) {
+          navigate(`/booking/confirmation/${data.ticketCode}`, { replace: true })
         } else {
           navigate('/')
         }
