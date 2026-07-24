@@ -11,6 +11,7 @@ export function AdminBookingsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  const [unpaidCashOnly, setUnpaidCashOnly] = useState(false)
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['admin-bookings'],
@@ -22,7 +23,10 @@ export function AdminBookingsPage() {
     onSuccess: () => { toast.success('Payment recorded'); qc.invalidateQueries({ queryKey: ['admin-bookings'] }) },
   })
 
+  const unpaidCashCount = bookings.filter((b) => b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING').length
+
   const filtered = bookings.filter((b) => {
+    if (unpaidCashOnly && !(b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING')) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -43,14 +47,29 @@ export function AdminBookingsPage() {
         </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, or ticket code..."
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, or ticket code..."
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+          />
+        </div>
+        <button
+          onClick={() => setUnpaidCashOnly((v) => !v)}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors whitespace-nowrap ${
+            unpaidCashOnly ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          Unpaid Cash
+          {unpaidCashCount > 0 && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${unpaidCashOnly ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              {unpaidCashCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {isLoading ? (

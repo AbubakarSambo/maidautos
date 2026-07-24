@@ -173,6 +173,14 @@ export class BookingsService {
       throw new BadRequestException('Guest bookings require at least an email or phone number');
     }
 
+    // Cash is an admin/agent-only payment method: an agent collects cash in person at
+    // the terminal and records the booking themselves. Self-service passengers (or
+    // guests) can only pay online — they never see or can request a Cash booking.
+    const isAdminBooked = !!requestingUser && requestingUser.role !== 'PASSENGER';
+    if (dto.paymentMethod === 'CASH' && !isAdminBooked) {
+      throw new BadRequestException('Cash payments can only be recorded by an admin agent');
+    }
+
     const ticketCode = this.generateTicketCode();
 
     const booking = await this.prisma.booking.create({
@@ -187,10 +195,10 @@ export class BookingsService {
         dropoffStopId: dto.dropoffStopId,
         amount,
         paymentMethod: dto.paymentMethod,
-        paymentStatus: dto.paymentMethod === 'CASH' ? 'PAID' : 'PENDING',
+        paymentStatus: dto.paymentMethod === 'CASH' && isAdminBooked ? 'PAID' : 'PENDING',
         status: 'CONFIRMED',
         ticketCode,
-        bookedByAdminId: requestingUser && requestingUser.role !== 'PASSENGER' ? requestingUser.id : null,
+        bookedByAdminId: isAdminBooked ? requestingUser.id : null,
       },
       include: {
         trip: { include: { route: { include: { originStop: true, destinationStop: true } }, car: true } },
@@ -200,8 +208,9 @@ export class BookingsService {
       },
     });
 
-    // Cash bookings are marked PAID immediately, so the ticket is issued right away.
-    // Paystack bookings only get their email once confirmPaystackPayment() fires.
+    // Only admin-recorded cash bookings are PAID immediately, so the ticket email goes
+    // out right away. Self-service cash and Paystack bookings get emailed once their
+    // payment is actually confirmed (recordCashPayment / confirmPaystackPayment).
     if (booking.paymentStatus === 'PAID') {
       this.sendTicketConfirmationEmail(booking).catch(() => {});
     }
@@ -239,10 +248,14 @@ export class BookingsService {
     if (booking.paymentStatus === 'PAID') throw new BadRequestException('Booking is already paid');
     if (booking.paymentMethod !== 'CASH') throw new BadRequestException('This booking is not a cash payment');
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: { paymentStatus: 'PAID' },
     });
+
+    this.sendTicketConfirmationEmail(booking).catch(() => {});
+
+    return updated;
   }
 
   async confirmPaystackPayment(reference: string) {

@@ -1,8 +1,7 @@
-import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowLeft, CreditCard, Banknote } from 'lucide-react'
+import { ArrowLeft, CreditCard } from 'lucide-react'
 import { bookingsApi, paystackApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency } from '@/lib/utils'
@@ -25,8 +24,6 @@ export function CheckoutPage() {
   const dropoffStopId = searchParams.get('dropoff') || ''
   const amount = Number(searchParams.get('amount'))
 
-  const [paymentMethod, setPaymentMethod] = useState<'PAYSTACK' | 'CASH'>('PAYSTACK')
-
   const { register, handleSubmit, setError, formState: { errors } } = useForm<GuestForm>()
 
   const { mutate: createBooking, isPending } = useMutation({
@@ -36,23 +33,19 @@ export function CheckoutPage() {
         seatNumber,
         pickupStopId,
         dropoffStopId,
-        paymentMethod,
+        paymentMethod: 'PAYSTACK',
         ...(!isAuthenticated && guestData ? guestData : {}),
       }),
     onSuccess: async (booking) => {
-      if (paymentMethod === 'PAYSTACK') {
-        try {
-          const { authorizationUrl } = await paystackApi.initialize(booking.id)
-          if (authorizationUrl) {
-            window.location.href = authorizationUrl
-          } else {
-            toast.error('Could not start payment — please try again or pay cash')
-          }
-        } catch (err: any) {
-          toast.error(err?.response?.data?.message || 'Could not start payment — please try again or pay cash')
+      try {
+        const { authorizationUrl } = await paystackApi.initialize(booking.id)
+        if (authorizationUrl) {
+          window.location.href = authorizationUrl
+        } else {
+          toast.error('Could not start payment — please try again')
         }
-      } else {
-        navigate(`/booking/confirmation/${booking.ticketCode}`)
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Could not start payment — please try again')
       }
     },
     onError: (err: any) => {
@@ -121,23 +114,10 @@ export function CheckoutPage() {
         {/* Payment method */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Payment Method</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setPaymentMethod('PAYSTACK')}
-              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-semibold transition-colors ${paymentMethod === 'PAYSTACK' ? 'border-green-600 bg-green-600/10 text-green-700' : 'border-gray-200 text-gray-600'}`}
-            >
-              <CreditCard className="w-4 h-4" /> Pay Online
-            </button>
-            <button
-              onClick={() => setPaymentMethod('CASH')}
-              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-semibold transition-colors ${paymentMethod === 'CASH' ? 'border-green-600 bg-green-600/10 text-green-700' : 'border-gray-200 text-gray-600'}`}
-            >
-              <Banknote className="w-4 h-4" /> Cash
-            </button>
+          <div className="flex items-center gap-2 p-3 border-2 border-green-600 bg-green-600/10 text-green-700 rounded-xl text-sm font-semibold">
+            <CreditCard className="w-4 h-4" /> Pay Online (Card / Bank Transfer)
           </div>
-          {paymentMethod === 'CASH' && (
-            <p className="text-xs text-amber-600 mt-2 bg-amber-50 px-3 py-2 rounded-lg">Pay cash to the driver or booking agent before boarding.</p>
-          )}
+          <p className="text-xs text-gray-400 mt-2">Cash payments are only handled in person by a MaidAutos agent at the terminal.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -146,7 +126,7 @@ export function CheckoutPage() {
             disabled={isPending}
             className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-green-900/20"
           >
-            {isPending ? 'Processing...' : paymentMethod === 'PAYSTACK' ? `Pay ${formatCurrency(amount)}` : `Confirm Booking`}
+            {isPending ? 'Processing...' : `Pay ${formatCurrency(amount)}`}
           </button>
         </form>
 
