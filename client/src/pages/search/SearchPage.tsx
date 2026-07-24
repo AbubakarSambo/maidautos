@@ -40,32 +40,34 @@ export function SearchPage() {
     <div className="min-h-screen bg-white font-sans">
 
       {/* ── Navigation ───────────────────────────────────────────── */}
-      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-2.5 text-white">
-          <Bus className="w-7 h-7 shrink-0" />
-          <span className="text-xl font-bold tracking-tight">MaidAutos</span>
-        </div>
-        <nav className="flex items-center gap-4 md:gap-6">
-          <a href="#how-it-works" className="hidden md:block text-white/80 hover:text-white text-sm transition-colors">How It Works</a>
-          <a href="#why-us" className="hidden md:block text-white/80 hover:text-white text-sm transition-colors">Why Us</a>
-          <button
-            onClick={() => navigate('/login')}
-            className="hidden md:block text-white/80 hover:text-white text-sm transition-colors"
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="bg-white text-green-800 px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-50 transition-colors whitespace-nowrap"
-          >
-            Register
-          </button>
+      <header className="sticky top-0 z-20 bg-white border-b border-gray-100">
+        <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
+          <div className="flex items-center gap-2.5 text-green-700">
+            <Bus className="w-7 h-7 shrink-0" />
+            <span className="text-xl font-bold tracking-tight">MaidAutos</span>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6">
+            <a href="#how-it-works" className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors">How It Works</a>
+            <a href="#why-us" className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors">Why Us</a>
+            <button
+              onClick={() => navigate('/login')}
+              className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => navigate('/register')}
+              className="bg-green-700 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-green-800 transition-colors whitespace-nowrap"
+            >
+              Register
+            </button>
+          </div>
         </nav>
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section
-        className="relative min-h-[92vh] flex flex-col items-center justify-center px-4"
+        className="relative min-h-[80vh] flex flex-col items-center justify-center px-4"
         style={{
           background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #059669 100%)',
         }}
@@ -391,12 +393,12 @@ export function SearchPage() {
       {/* ── Footer ───────────────────────────────────────────────── */}
       <footer className="bg-gray-900 text-gray-400 px-8 py-12">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-2">
+          <div>
             <div className="flex items-center gap-2 text-white mb-3">
               <Bus className="w-5 h-5" />
               <span className="font-bold text-lg">MaidAutos</span>
             </div>
-            <p className="text-sm leading-relaxed max-w-xs">
+            <p className="text-sm leading-relaxed">
               Nigeria's trusted intercity bus service connecting Abuja to the North-East and beyond. Safe, comfortable, on time.
             </p>
           </div>
@@ -421,6 +423,18 @@ export function SearchPage() {
                 </div>
               </li>
             </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold mb-4 text-sm">Our Fleet</h4>
+            <div className="bg-white/5 p-4 rounded-lg">
+              <div
+                className="w-full h-24 rounded-md mb-2 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #065f46 0%, #059669 100%)' }}
+              >
+                <Bus className="w-8 h-8 text-white/70" />
+              </div>
+              <p className="text-[10px] text-center opacity-60">Modern executive coaches with WiFi &amp; AC</p>
+            </div>
           </div>
         </div>
         <div className="max-w-5xl mx-auto border-t border-gray-800 mt-10 pt-6 text-center text-xs">
