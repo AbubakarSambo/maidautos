@@ -59,10 +59,18 @@ const features = [
         <a href={APP_URL} class="text-gray-600 font-medium hover:text-green-700 transition-colors text-sm">Sign In</a>
         <a href={APP_URL} class="bg-green-700 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-green-800 transition-colors">Register</a>
       </div>
-      <button class="md:hidden p-2 text-gray-600" aria-label="Menu">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <button id="mobile-menu-toggle" class="md:hidden p-2 text-gray-600" aria-label="Menu" aria-expanded="false">
+        <svg id="menu-icon-open" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </nav>
+
+    <div id="mobile-menu" class="md:hidden hidden border-t border-gray-200 px-6 py-4 flex flex-col gap-4 bg-white">
+      <a href="#how-it-works" class="text-gray-600 font-medium text-sm">How It Works</a>
+      <a href="#why-us" class="text-gray-600 font-medium text-sm">Why Us</a>
+      <a href={APP_URL} class="text-gray-600 font-medium text-sm">Sign In</a>
+      <a href={APP_URL} class="bg-green-700 text-white px-6 py-2 rounded-full font-bold text-sm text-center">Register</a>
+    </div>
   </header>
 
   <main class="pt-16">
@@ -290,6 +298,30 @@ const features = [
       </div>
     </div>
   </footer>
+
+  <script>
+    const toggle = document.getElementById('mobile-menu-toggle')
+    const menu = document.getElementById('mobile-menu')
+    const iconOpen = document.getElementById('menu-icon-open')
+    const iconClose = document.getElementById('menu-icon-close')
+
+    toggle?.addEventListener('click', () => {
+      const isOpen = !menu?.classList.contains('hidden')
+      menu?.classList.toggle('hidden')
+      iconOpen?.classList.toggle('hidden')
+      iconClose?.classList.toggle('hidden')
+      toggle.setAttribute('aria-expanded', String(!isOpen))
+    })
+
+    menu?.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        menu.classList.add('hidden')
+        iconOpen?.classList.remove('hidden')
+        iconClose?.classList.add('hidden')
+        toggle?.setAttribute('aria-expanded', 'false')
+      })
+    })
+  </script>
 
 </body>
 </html>

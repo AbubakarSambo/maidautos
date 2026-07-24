@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu, ChevronDown,
+  MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu, X, ChevronDown,
   ShieldCheck, Armchair, Star, Banknote, Ticket, Share2, Globe,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
@@ -67,6 +67,7 @@ export function SearchPage() {
   const [to, setTo] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [searched, setSearched] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const appliedIncomingParams = useRef(false)
 
   const { data: stops = [] } = useQuery<Stop[]>({
@@ -142,10 +143,36 @@ export function SearchPage() {
               Register
             </button>
           </div>
-          <button className="md:hidden p-2 text-white" aria-label="Menu">
-            <Menu className="w-6 h-6" />
+          <button
+            className="md:hidden p-2 text-white"
+            aria-label="Menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((v) => !v)}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </nav>
+
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/5 px-6 py-4 flex flex-col gap-4 bg-slate-900">
+            <a href="#" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-white">How It Works</a>
+            <a href="#" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-white/70">Routes</a>
+            <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-white/70">Why Us</a>
+            <div className="h-px w-full bg-white/10" />
+            <button
+              onClick={() => { setMobileMenuOpen(false); navigate('/login') }}
+              className="text-left text-sm font-medium text-white/70"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
+              className="bg-green-600 text-white px-6 py-2.5 rounded-full text-sm font-bold text-center"
+            >
+              Register
+            </button>
+          </div>
+        )}
       </header>
 
       {/* ── Hero & Search ────────────────────────────────────────── */}
