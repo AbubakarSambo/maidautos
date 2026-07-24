@@ -108,9 +108,10 @@ export function SearchPage() {
     e.preventDefault()
     if (!from || !to || from === to) return
     setSearched(true)
-    if (searched) {
+    // Wait a frame so the (conditionally rendered) results section has mounted before scrolling to it.
+    requestAnimationFrame(() => {
       document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })
-    }
+    })
   }
 
   return (

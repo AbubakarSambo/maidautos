@@ -72,6 +72,10 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid email or password');
 
+    // Catch any guest bookings made under this email since the last login/verification
+    // (e.g. the passenger booked as a guest again without noticing they were logged out).
+    this.linkGuestBookings(user.id, user.email).catch(() => {});
+
     return { accessToken: this.generateToken(user), user: this.formatUser(user) };
   }
 
@@ -89,6 +93,15 @@ export class AuthService {
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({ where: { id: record.userId }, data: { isEmailVerified: true } });
       await tx.token.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+
+      // Only now do we know this person genuinely owns this email address (they clicked
+      // a link mailed to it) — link any guest bookings made under it before they had an
+      // account. Doing this before verification would let someone register with a
+      // stranger's email and see that stranger's booking history.
+      await tx.booking.updateMany({
+        where: { userId: null, guestEmail: { equals: record.user.email, mode: 'insensitive' } },
+        data: { userId: record.userId },
+      });
     });
 
     const user = record.user;
@@ -160,6 +173,13 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
     return this.formatUser(user);
+  }
+
+  private async linkGuestBookings(userId: string, email: string) {
+    await this.prisma.booking.updateMany({
+      where: { userId: null, guestEmail: { equals: email, mode: 'insensitive' } },
+      data: { userId },
+    });
   }
 
   private generateToken(user: { id: string; email: string; role: string }) {
