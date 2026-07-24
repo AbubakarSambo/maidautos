@@ -2,12 +2,63 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  MapPin, Calendar, Search, Bus, Clock, ArrowRight,
-  Shield, Star, Users, Banknote, CheckCircle, ChevronDown,
+  MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu,
+  ShieldCheck, Armchair, Star, Banknote, ChevronDown, Ticket, Share2, Globe,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
 import type { Stop, Trip } from '@/types'
+
+const FEATURES = [
+  {
+    icon: <ShieldCheck className="w-7 h-7" />,
+    title: 'Unmatched Safety',
+    desc: 'Real-time GPS tracking, speed limiters, and mandatory 48-point safety checks for every vehicle before departure.',
+  },
+  {
+    icon: <Clock className="w-7 h-7" />,
+    title: 'Precision Timing',
+    desc: 'We pride ourselves on 98% on-time departures. No waiting at the terminal for the bus to fill up.',
+  },
+  {
+    icon: <Armchair className="w-7 h-7" />,
+    title: 'Executive Comfort',
+    desc: 'Ergonomic leather seating, climate-controlled interiors, and onboard entertainment systems for long-haul trips.',
+  },
+  {
+    icon: <Banknote className="w-7 h-7" />,
+    title: 'Fair Economics',
+    desc: 'Competitive, transparent pricing with loyalty rewards for frequent travelers. No peak-period surcharges for app users.',
+  },
+]
+
+const STATS = [
+  { value: '50k+', label: 'Trips Completed' },
+  { value: '120+', label: 'Active Coaches' },
+  { value: '45', label: 'Terminals Nationwide' },
+  { value: '4.8/5', label: 'User Rating' },
+]
+
+const TESTIMONIALS = [
+  {
+    name: 'Adewale M.',
+    initials: 'AM',
+    route: 'Abuja → Kano',
+    text: 'Booked online in under 2 minutes. The vehicle was clean, AC was cold, and we arrived exactly on time. Best intercity service I\'ve used.',
+  },
+  {
+    name: 'Chioma N.',
+    initials: 'CN',
+    route: 'Abuja → Jos',
+    text: 'MaidAutos is hands down the most reliable option for North-bound travel. Professional drivers and very comfortable executive seats.',
+  },
+  {
+    name: 'Olumide I.',
+    initials: 'OI',
+    route: 'Abuja → Maiduguri',
+    text: 'Smooth booking, fair price, and the driver was courteous. Highly recommend to anyone travelling up north who values their peace of mind.',
+  },
+]
 
 export function SearchPage() {
   const navigate = useNavigate()
@@ -40,74 +91,73 @@ export function SearchPage() {
     <div className="min-h-screen bg-white font-sans">
 
       {/* ── Navigation ───────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 bg-white border-b border-gray-100">
-        <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-          <div className="flex items-center gap-2.5 text-green-700">
-            <Bus className="w-7 h-7 shrink-0" />
+      <header className="sticky top-0 z-50 bg-slate-900 border-b border-white/5">
+        <nav className="flex items-center justify-between px-6 max-w-6xl mx-auto h-20">
+          <div className="flex items-center gap-2 text-white">
+            <Bus className="w-7 h-7 shrink-0 text-green-300" />
             <span className="text-xl font-bold tracking-tight">MaidAutos</span>
           </div>
-          <div className="flex items-center gap-4 md:gap-6">
-            <a href="#how-it-works" className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors">How It Works</a>
-            <a href="#why-us" className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors">Why Us</a>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#" className="text-sm font-semibold text-white relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-green-500">How It Works</a>
+            <a href="#" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Routes</a>
+            <a href="#why-us" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Why Us</a>
+            <div className="h-6 w-px bg-white/10" />
             <button
               onClick={() => navigate('/login')}
-              className="hidden md:block text-gray-600 hover:text-green-700 text-sm font-medium transition-colors"
+              className="text-sm font-medium text-white/70 hover:text-white transition-colors"
             >
               Sign In
             </button>
             <button
               onClick={() => navigate('/register')}
-              className="bg-green-700 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-green-800 transition-colors whitespace-nowrap"
+              className="bg-green-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-green-500 transition-colors shadow-lg shadow-green-900/30 whitespace-nowrap"
             >
               Register
             </button>
           </div>
+          <button className="md:hidden p-2 text-white" aria-label="Menu">
+            <Menu className="w-6 h-6" />
+          </button>
         </nav>
       </header>
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
+      {/* ── Hero & Search ────────────────────────────────────────── */}
       <section
-        className="relative min-h-[80vh] flex flex-col items-center justify-center px-4"
-        style={{
-          background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #059669 100%)',
-        }}
+        className="relative pt-20 pb-24 px-4 border-b border-white/5 overflow-hidden"
+        style={{ backgroundColor: '#0b1c30' }}
       >
-        {/* Decorative overlay pattern */}
         <div
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 opacity-40"
           style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, white 1px, transparent 1px),
-              radial-gradient(circle at 75% 75%, white 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
+            backgroundImage: 'radial-gradient(rgba(34, 197, 94, 0.15) 1.5px, transparent 1.5px)',
+            backgroundSize: '32px 32px',
           }}
         />
 
-        <div className="relative z-10 text-center mb-10">
-          <p className="text-green-300 uppercase tracking-[0.3em] text-xs font-semibold mb-4">
-            Nigeria's Trusted Intercity Transport
+        <div className="relative z-10 text-center mb-14">
+          <p className="text-green-300 uppercase tracking-[0.2em] text-xs font-bold mb-6">
+            Premium Intercity Travel
           </p>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            RELIABLE. SAFE. ON TIME.
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6 max-w-4xl mx-auto">
+            Seamless bookings for your next intercity journey
           </h1>
-          <p className="text-green-200 text-lg max-w-xl mx-auto">
-            Book comfortable intercity trips across Nigeria — from Abuja to Kano, Maiduguri, Jos and beyond.
+          <p className="text-white/70 max-w-2xl mx-auto">
+            Join thousands of travelers who trust MaidAutos for comfortable, safe, and on-time trips across Nigeria.
           </p>
         </div>
 
         {/* Search Widget */}
-        <div className="relative z-10 w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6">
-          <form onSubmit={handleSearch}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
-                  From
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
+        <div className="relative z-10 max-w-5xl mx-auto bg-white p-4 md:p-3 rounded-2xl md:rounded-full shadow-2xl border border-white/10">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-stretch gap-3 md:gap-2">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0 md:divide-x divide-gray-100">
+              <div className="px-4 py-3 md:px-6 flex flex-col items-start border border-gray-200 rounded-xl md:border-0 md:rounded-none">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Departure</label>
+                <div className="flex items-center gap-2 w-full">
+                  <MapPin className="w-5 h-5 text-green-600 shrink-0" />
                   <select
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
-                    className="w-full pl-9 pr-8 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-gray-50 font-medium"
+                    className="w-full bg-transparent border-none p-0 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
                     required
                   >
                     <option value="">Select departure</option>
@@ -115,20 +165,17 @@ export function SearchPage() {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
-                  To
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
+              <div className="px-4 py-3 md:px-6 flex flex-col items-start border border-gray-200 rounded-xl md:border-0 md:rounded-none">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Destination</label>
+                <div className="flex items-center gap-2 w-full">
+                  <MapPin className="w-5 h-5 text-green-600 shrink-0" />
                   <select
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
-                    className="w-full pl-9 pr-8 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-gray-50 font-medium"
+                    className="w-full bg-transparent border-none p-0 text-gray-900 font-semibold focus:ring-0 outline-none appearance-none cursor-pointer"
                     required
                   >
                     <option value="">Select destination</option>
@@ -136,22 +183,19 @@ export function SearchPage() {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
-                  Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />
+              <div className="px-4 py-3 md:px-6 flex flex-col items-start border border-gray-200 rounded-xl md:border-0 md:rounded-none">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Date</label>
+                <div className="flex items-center gap-2 w-full">
+                  <Calendar className="w-5 h-5 text-green-600 shrink-0" />
                   <input
                     type="date"
                     value={date}
                     min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 font-medium"
+                    className="w-full bg-transparent border-none p-0 text-gray-900 font-semibold focus:ring-0 outline-none cursor-pointer"
                     required
                   />
                 </div>
@@ -160,17 +204,12 @@ export function SearchPage() {
 
             <button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+              className="bg-green-600 text-white px-10 py-4 md:py-0 rounded-xl md:rounded-full font-bold text-sm hover:bg-green-500 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-green-900/30"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-5 h-5" />
               Search Available Trips
             </button>
           </form>
-        </div>
-
-        {/* Scroll cue */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/40">
-          <ChevronDown className="w-5 h-5 animate-bounce" />
         </div>
       </section>
 
@@ -247,198 +286,159 @@ export function SearchPage() {
       )}
 
       {/* ── Why Choose Us ────────────────────────────────────────── */}
-      <section id="why-us" className="py-20 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-green-600 text-sm font-bold uppercase tracking-widest mb-3">Why Choose Us</p>
-            <h2 className="text-3xl font-extrabold text-gray-900">Travel the way you deserve</h2>
+      <section id="why-us" className="py-24 px-6 max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+          <div className="max-w-xl">
+            <p className="text-green-600 text-sm font-bold uppercase tracking-widest mb-3">Premium Standards</p>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">Elevating the Nigerian travel experience</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: <Shield className="w-7 h-7 text-green-600" />,
-                title: 'Safety First',
-                desc: 'Regularly maintained vehicles and vetted, experienced drivers on every trip.',
-              },
-              {
-                icon: <Clock className="w-7 h-7 text-green-600" />,
-                title: 'Always On Time',
-                desc: 'We respect your schedule. Departures are prompt — no unnecessary delays.',
-              },
-              {
-                icon: <Users className="w-7 h-7 text-green-600" />,
-                title: 'Spacious & Comfortable',
-                desc: 'Air-conditioned vehicles with ample legroom for a relaxing journey.',
-              },
-              {
-                icon: <Banknote className="w-7 h-7 text-green-600" />,
-                title: 'Fair Pricing',
-                desc: 'Transparent fares with no hidden fees. Pay online or at the terminal.',
-              },
-            ].map((item) => (
-              <div key={item.title} className="p-6 rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-sm transition-all">
-                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-                  {item.icon}
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+          <p className="text-gray-500 max-w-sm">We combine modern technology with operational excellence to ensure every mile of your journey is exceptional.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {FEATURES.map((item) => (
+            <div key={item.title} className="p-8 bg-gray-50 border border-gray-100 rounded-2xl group hover:border-green-300 hover:shadow-xl hover:shadow-green-900/5 transition-all duration-300">
+              <div className="w-14 h-14 bg-green-600/10 text-green-700 rounded-xl flex items-center justify-center mb-8 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                {item.icon}
               </div>
-            ))}
-          </div>
+              <h3 className="text-xl font-bold mb-4">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-gray-500">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── How It Works ─────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-20 px-6 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-green-600 text-sm font-bold uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-3xl font-extrabold text-gray-900">Book your trip in 3 steps</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Search & Select',
-                desc: 'Enter your departure city, destination, and travel date to view available trips.',
-              },
-              {
-                step: '02',
-                title: 'Book & Pay',
-                desc: 'Choose your preferred trip, enter your details, and pay securely online via Paystack.',
-              },
-              {
-                step: '03',
-                title: 'Travel',
-                desc: 'Arrive at the terminal with your ticket code. Board and enjoy a comfortable ride.',
-              },
-            ].map((item, i) => (
-              <div key={item.step} className="relative flex flex-col items-center text-center">
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-green-200" />
-                )}
-                <div className="w-16 h-16 rounded-full bg-green-600 text-white flex items-center justify-center text-xl font-extrabold mb-5 shadow-lg">
-                  {item.step}
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2 text-lg">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
+      {/* ── Operational Stats ────────────────────────────────────── */}
+      <section className="py-16 bg-slate-900 text-white">
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {STATS.map((s) => (
+            <div key={s.label}>
+              <div className="text-4xl font-extrabold text-green-300 mb-2">{s.value}</div>
+              <p className="text-sm opacity-60 uppercase tracking-widest font-semibold">{s.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────────── */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-green-600 text-sm font-bold uppercase tracking-widest mb-3">Testimonials</p>
-            <h2 className="text-3xl font-extrabold text-gray-900">What our passengers say</h2>
+      <section className="py-24 bg-gray-50 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <p className="text-green-600 text-sm font-bold uppercase tracking-widest mb-2">Passenger Stories</p>
+            <h2 className="text-3xl font-extrabold text-gray-900">Trusted by 200,000+ Nigerians</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                name: 'Adewale M.',
-                route: 'Abuja → Kano',
-                text: 'Booked online in under 2 minutes. The vehicle was clean, AC was cold, and we arrived on time. Will definitely use MaidAutos again.',
-              },
-              {
-                name: 'Chioma N.',
-                route: 'Abuja → Jos',
-                text: 'I travel this route often and MaidAutos is hands down the most reliable option. Professional drivers and very comfortable seats.',
-              },
-              {
-                name: 'Olumide I.',
-                route: 'Abuja → Maiduguri',
-                text: 'Smooth booking process, fair price, and the driver was courteous throughout the journey. Highly recommend to anyone travelling up north.',
-              },
-            ].map((t) => (
-              <div key={t.name} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                <div className="flex items-center gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
+        </div>
+        <div className="flex md:grid md:grid-cols-3 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none gap-6 px-6 md:px-6 max-w-6xl mx-auto pb-4 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.name} className="min-w-[280px] md:min-w-0 shrink-0 md:shrink snap-center p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex gap-0.5 mb-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <p className="text-sm text-gray-600 mb-6 leading-relaxed">"{t.text}"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-600/10 text-green-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  {t.initials}
                 </div>
-                <p className="text-gray-600 text-sm leading-relaxed mb-5">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-gray-900 font-semibold text-sm">{t.name}</p>
-                    <p className="text-gray-400 text-xs">{t.route}</p>
-                  </div>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900">{t.name}</h4>
+                  <p className="text-[11px] text-gray-500 font-medium">{t.route}</p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── CTA Banner ───────────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-green-700">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-extrabold text-white mb-4">Ready to travel?</h2>
-          <p className="text-green-200 mb-8">Book your seat today and experience safe, comfortable intercity travel.</p>
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="bg-white text-green-700 font-bold px-8 py-3.5 rounded-full hover:bg-green-50 transition-colors flex items-center gap-2 mx-auto"
-          >
-            <Search className="w-4 h-4" />
-            Book a Trip
-          </button>
+      {/* ── App CTA ──────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-6">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">Ready to start your journey?</h2>
+            <p className="text-lg text-gray-500 leading-relaxed">Book your seat in seconds, track your bus in real-time, and manage your travel history all in one place.</p>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="w-full sm:w-auto bg-green-600 text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-green-500 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-green-900/30 active:scale-95"
+              >
+                <Ticket className="w-5 h-5" />
+                Book Your Trip Now
+              </button>
+              <button className="w-full sm:w-auto bg-white border-2 border-green-600 text-green-700 px-8 py-5 rounded-full font-bold text-lg hover:bg-green-50 transition-all">
+                View Routes
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 w-full">
+            <div className="w-full aspect-square bg-green-600/10 rounded-3xl overflow-hidden flex items-center justify-center p-8 border border-green-600/10">
+              <div
+                className="w-full h-full rounded-2xl shadow-2xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #065f46 0%, #059669 100%)' }}
+              >
+                <Bus className="w-20 h-20 text-white/70" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="bg-gray-900 text-gray-400 px-8 py-12">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 text-white mb-3">
-              <Bus className="w-5 h-5" />
-              <span className="font-bold text-lg">MaidAutos</span>
+      <footer className="bg-slate-900 text-white pt-24 pb-12 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Bus className="w-7 h-7 text-green-300" />
+              <span className="text-2xl font-bold tracking-tight">MaidAutos</span>
             </div>
-            <p className="text-sm leading-relaxed">
-              Nigeria's trusted intercity bus service connecting Abuja to the North-East and beyond. Safe, comfortable, on time.
+            <p className="text-sm text-white/60 leading-relaxed max-w-xs">
+              Connecting Nigeria's major cities with a focus on safety, reliability, and passenger comfort.
             </p>
+            <div className="flex gap-4">
+              <a className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors" href="#">
+                <Share2 className="w-4 h-4" />
+              </a>
+              <a className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors" href="#">
+                <Globe className="w-4 h-4" />
+              </a>
+            </div>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#why-us" className="hover:text-white transition-colors">Why Choose Us</a></li>
-              <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-              <li><button onClick={() => navigate('/register')} className="hover:text-white transition-colors">Create Account</button></li>
-              <li><button onClick={() => navigate('/login')} className="hover:text-white transition-colors">Sign In</button></li>
+            <h4 className="text-xs font-bold text-green-300 uppercase tracking-[0.2em] mb-8">Company</h4>
+            <ul className="space-y-5">
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="#">About Us</a></li>
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="#why-us">Why MaidAutos</a></li>
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="#">Corporate Travel</a></li>
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="#">Partner with Us</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li><span>help@maidautos.com</span></li>
-              <li><span>+234 800 000 0000</span></li>
-              <li>
-                <div className="flex items-center gap-1 text-green-500 mt-2">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span className="text-xs">Paystack Secured</span>
+            <h4 className="text-xs font-bold text-green-300 uppercase tracking-[0.2em] mb-8">Support</h4>
+            <ul className="space-y-5">
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="mailto:help@maidautos.com">help@maidautos.com</a></li>
+              <li><a className="text-sm text-white/60 hover:text-green-300 transition-colors" href="tel:+2348000000000">+234 800 000 0000</a></li>
+              <li><button onClick={() => navigate('/register')} className="text-sm text-white/60 hover:text-green-300 transition-colors">Create Account</button></li>
+              <li><button onClick={() => navigate('/login')} className="text-sm text-white/60 hover:text-green-300 transition-colors">Sign In</button></li>
+            </ul>
+          </div>
+          <div className="space-y-8">
+            <div>
+              <h4 className="text-xs font-bold text-green-300 uppercase tracking-[0.2em] mb-6">Payment Security</h4>
+              <div className="flex items-center gap-3 text-green-300 bg-white/5 p-4 rounded-xl border border-white/10">
+                <ShieldCheck className="w-6 h-6" />
+                <div>
+                  <p className="text-xs font-bold text-white">Paystack Secured</p>
+                  <p className="text-[10px] text-white/40">PCI-DSS Level 1 compliant</p>
                 </div>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Our Fleet</h4>
-            <div className="bg-white/5 p-4 rounded-lg">
-              <div
-                className="w-full h-24 rounded-md mb-2 flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #065f46 0%, #059669 100%)' }}
-              >
-                <Bus className="w-8 h-8 text-white/70" />
               </div>
-              <p className="text-[10px] text-center opacity-60">Modern executive coaches with WiFi &amp; AC</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <a className="text-[11px] font-medium text-white/40 hover:text-white transition-colors" href="#">Privacy Policy</a>
+              <a className="text-[11px] font-medium text-white/40 hover:text-white transition-colors" href="#">Terms &amp; Conditions</a>
             </div>
           </div>
         </div>
-        <div className="max-w-5xl mx-auto border-t border-gray-800 mt-10 pt-6 text-center text-xs">
-          © {new Date().getFullYear()} MaidAutos. All rights reserved.
+        <div className="max-w-6xl mx-auto pt-10 border-t border-white/5 text-center">
+          <p className="text-[11px] text-white/30">© {new Date().getFullYear()} MaidAutos. All rights reserved.</p>
         </div>
       </footer>
 

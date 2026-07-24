@@ -2,9 +2,9 @@
 const APP_URL = "https://app.maidautos.com"
 
 const steps = [
-  { n: '1', title: 'Search', desc: 'Enter your origin city, destination, and travel date to see available trips.' },
-  { n: '2', title: 'Choose Your Seat', desc: 'Pick your seat on the visual seat map and select your preferred stops.' },
-  { n: '3', title: 'Pay & Travel', desc: 'Pay securely via Paystack or cash. Receive your e-ticket instantly.' },
+  { n: '1', title: 'Search', desc: 'Enter your origin city, destination, and travel date to see available trips.', icon: 'search' },
+  { n: '2', title: 'Choose Your Seat', desc: 'Pick your seat on the visual seat map and select your preferred stops.', icon: 'seat' },
+  { n: '3', title: 'Pay & Travel', desc: 'Pay securely via Paystack or cash. Receive your e-ticket instantly.', icon: 'wallet' },
 ]
 
 const featuredRoutes = [
@@ -20,10 +20,10 @@ const moreRoutes = [
 ]
 
 const features = [
-  { title: 'Secure Payments', desc: 'Powered by Paystack. Your payment is safe and protected by industry-leading security.' },
-  { title: 'Live Tracking', desc: 'Know exactly where your bus is on its journey with our real-time GPS tracking system.' },
-  { title: 'Instant Tickets', desc: 'No queues. Your e-ticket is delivered immediately to your email and WhatsApp.' },
-  { title: 'Choose Your Seat', desc: 'Pick your preferred seat visually before you pay. Sit exactly where you want.' },
+  { title: 'Secure Payments', desc: 'Powered by Paystack. Your payment is safe and protected by industry-leading security.', icon: 'lock' },
+  { title: 'Live Tracking', desc: 'Know exactly where your bus is on its journey with our real-time GPS tracking system.', icon: 'pin' },
+  { title: 'Instant Tickets', desc: 'No queues. Your e-ticket is delivered immediately to your email and WhatsApp.', icon: 'ticket' },
+  { title: 'Choose Your Seat', desc: 'Pick your preferred seat visually before you pay. Sit exactly where you want.', icon: 'seat' },
 ]
 ---
 <!doctype html>
@@ -35,11 +35,11 @@ const features = [
   <meta name="description" content="Book intercity bus tickets across Nigeria. Abuja, Kaduna, Maiduguri and more. Safe, comfortable, on time." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Chivo:wght@700;800&display=swap" rel="stylesheet" />
   <style>
     @import "tailwindcss";
-    body { font-family: 'Inter', sans-serif; }
-    h1, h2, h3, .font-display { font-family: 'Manrope', sans-serif; }
+    body { font-family: 'Work Sans', sans-serif; }
+    h1, h2, h3, .font-display { font-family: 'Chivo', sans-serif; }
   </style>
 </head>
 <body class="bg-white text-gray-900">
@@ -68,82 +68,106 @@ const features = [
   <main class="pt-16">
 
     <!-- Hero -->
-    <section class="relative bg-gradient-to-br from-green-900 to-green-700 text-white px-6 lg:px-16 pt-20 pb-32 overflow-hidden">
-      <div class="relative max-w-3xl mx-auto text-center">
-        <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8">
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.13l-4.77 2.58.91-5.32L2.27 6.62l5.34-.78L10 1z" clip-rule="evenodd" /></svg>
-          <span class="text-xs font-bold uppercase tracking-widest text-green-100">Premium Intercity Transport</span>
+    <section class="relative pt-20 pb-40 px-6 lg:px-16 overflow-hidden" style="background-color: #0b1c30;">
+      <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-green-600/20 rounded-full blur-[150px] -mr-48 -mt-48 pointer-events-none"></div>
+
+      <div class="relative z-10 max-w-3xl mx-auto text-center mb-12">
+        <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8 backdrop-blur-md">
+          <svg class="w-3.5 h-3.5 text-green-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.13l-4.77 2.58.91-5.32L2.27 6.62l5.34-.78L10 1z" clip-rule="evenodd" /></svg>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-green-100">Premium Intercity Transport</span>
         </div>
-        <h1 class="text-4xl lg:text-6xl font-extrabold mb-6 leading-tight">
+        <h1 class="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
           Travel Between Cities<br />
           <span class="text-green-300">With Confidence</span>
         </h1>
-        <p class="text-green-200 text-lg lg:text-xl mb-10 max-w-xl mx-auto">Book your intercity bus ticket online in minutes. Pay securely, receive your ticket instantly, and travel comfortably.</p>
-        <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
-          <a href={APP_URL} class="inline-flex items-center gap-2 bg-white text-green-800 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-green-50 transition-colors shadow-lg">
+        <p class="text-white/80 text-lg mb-10 max-w-xl mx-auto">Book your intercity bus ticket online in minutes. Pay securely, receive your ticket instantly, and travel comfortably.</p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+          <a href={APP_URL} class="group bg-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
             Book Your Ticket
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </a>
-          <div class="flex -space-x-3">
-            {['A', 'B', 'C'].map((letter) => (
-              <div class="w-11 h-11 rounded-full border-2 border-white bg-green-600 flex items-center justify-center text-sm font-bold text-white">{letter}</div>
-            ))}
-            <div class="w-11 h-11 rounded-full border-2 border-white bg-green-300 flex items-center justify-center text-green-900 font-bold text-xs">+10k</div>
+          <div class="flex flex-col items-center sm:items-start gap-1">
+            <div class="flex -space-x-3">
+              {['A', 'B', 'C'].map((letter) => (
+                <div class="w-10 h-10 rounded-full border-2 border-[#0b1c30] bg-green-600 flex items-center justify-center text-sm font-bold text-white">{letter}</div>
+              ))}
+            </div>
+            <span class="text-white font-bold text-sm">150k+ Happy Passengers</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabbed Search Widget (overlaps into next section) -->
+      <div class="relative z-20 max-w-[1000px] mx-auto -mb-32">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+          <div class="flex border-b border-gray-100">
+            <button class="flex-1 py-4 flex items-center justify-center gap-2 font-semibold text-sm text-green-700 border-b-2 border-green-700 bg-gray-50">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h4m-9 5h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              Bus
+            </button>
+            <button class="flex-1 py-4 flex items-center justify-center gap-2 font-semibold text-sm text-gray-400 hover:bg-gray-50 transition-colors" disabled title="Coming soon">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+              Flight
+            </button>
+            <button class="flex-1 py-4 flex items-center justify-center gap-2 font-semibold text-sm text-gray-400 hover:bg-gray-50 transition-colors" disabled title="Coming soon">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 17h14M5 17a2 2 0 100 4 2 2 0 000-4zm14 0a2 2 0 100 4 2 2 0 000-4zM5 17l1.5-6h11L19 17M6.5 11l1-4h9l1 4" /></svg>
+              Hire
+            </button>
+          </div>
+          <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div class="space-y-2">
+              <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                From
+              </label>
+              <select class="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                <option>Select City</option>
+                <option>Abuja</option>
+                <option>Maiduguri</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                To
+              </label>
+              <select class="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                <option>Select Destination</option>
+                <option>Kaduna</option>
+                <option>Kano</option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                Date
+              </label>
+              <input type="date" class="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+            </div>
+            <button class="bg-green-700 text-white rounded-lg py-3.5 font-bold hover:bg-green-800 transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              Search Trips
+            </button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Booking widget -->
-    <section class="max-w-5xl mx-auto px-6 lg:px-0 -mt-16 relative z-20">
-      <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-4 gap-4 items-end border border-gray-100">
-        <div class="space-y-2">
-          <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            From
-          </label>
-          <select class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent">
-            <option>Select City</option>
-            <option>Abuja</option>
-            <option>Maiduguri</option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-            To
-          </label>
-          <select class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent">
-            <option>Select Destination</option>
-            <option>Kaduna</option>
-            <option>Kano</option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            Date
-          </label>
-          <input type="date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent" />
-        </div>
-        <button class="bg-green-700 text-white rounded-lg py-3.5 font-bold hover:bg-green-800 transition-colors flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          Search Trips
-        </button>
-      </div>
-    </section>
-
     <!-- How it works -->
-    <section id="how-it-works" class="px-6 lg:px-16 py-20 max-w-5xl mx-auto">
+    <section id="how-it-works" class="pt-44 pb-20 px-6 lg:px-16 max-w-5xl mx-auto">
       <h2 class="text-3xl font-bold text-center mb-2">How It Works</h2>
       <p class="text-gray-500 text-center mb-16">Three simple steps to your seat</p>
-      <div class="grid lg:grid-cols-3 gap-12 relative">
-        <div class="hidden lg:block absolute top-7 left-24 right-24 h-0.5 bg-gray-200 -z-0"></div>
-        {steps.map(({ n, title, desc }) => (
-          <div class="relative z-10 flex flex-col items-center text-center group">
-            <div class="w-14 h-14 rounded-2xl bg-white shadow-md border border-gray-200 flex items-center justify-center mb-6 text-xl font-black group-hover:bg-green-700 group-hover:text-white group-hover:border-green-700 transition-all">{n}</div>
-            <h3 class="text-lg font-bold mb-2">{title}</h3>
-            <p class="text-gray-500 px-4">{desc}</p>
+      <div class="grid lg:grid-cols-3 gap-8">
+        {steps.map(({ n, title, desc, icon }) => (
+          <div class="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow text-center flex flex-col items-center">
+            <div class="relative w-16 h-16 rounded-full bg-gray-50 text-green-700 flex items-center justify-center mb-6">
+              {icon === 'search' && <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+              {icon === 'seat' && <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h6a2 2 0 012 2v8h2a2 2 0 012 2v2H6a2 2 0 01-2-2V6a2 2 0 012-2zm0 10h8" /></svg>}
+              {icon === 'wallet' && <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm14 4h-3a2 2 0 000 4h3" /></svg>}
+              <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-green-700 text-white font-bold flex items-center justify-center text-sm">{n}</div>
+            </div>
+            <h3 class="text-xl font-bold mb-3">{title}</h3>
+            <p class="text-gray-500">{desc}</p>
           </div>
         ))}
       </div>
@@ -167,20 +191,20 @@ const features = [
             <a href={APP_URL} class="group p-6 rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-lg transition-all bg-white">
               <div class="flex justify-between items-start mb-8">
                 <div class="flex flex-col gap-1">
-                  <span class="text-xs font-bold text-gray-400 uppercase">Origin</span>
+                  <span class="text-[10px] font-bold text-gray-400 uppercase">Origin</span>
                   <span class="text-lg font-bold">{from}</span>
                 </div>
                 <div class="flex items-center justify-center w-10 h-10 rounded-full bg-green-50 text-green-700 flex-shrink-0">
                   <svg class="w-5 h-5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                 </div>
                 <div class="flex flex-col gap-1 text-right">
-                  <span class="text-xs font-bold text-gray-400 uppercase">Destination</span>
+                  <span class="text-[10px] font-bold text-gray-400 uppercase">Destination</span>
                   <span class="text-lg font-bold">{to}</span>
                 </div>
               </div>
               <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
                 <span class="text-green-700 font-bold text-sm">Book Now</span>
-                {tag && <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded font-bold">{tag}</span>}
+                {tag && <span class="text-[10px] bg-green-50 text-green-700 px-2 py-1 rounded font-bold">{tag}</span>}
               </div>
             </a>
           ))}
@@ -201,12 +225,15 @@ const features = [
       <h2 class="text-3xl font-bold text-center mb-2">Why MaidAutos?</h2>
       <p class="text-gray-500 text-center mb-16">The gold standard for intercity travel in Nigeria</p>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {features.map(({ title, desc }) => (
+        {features.map(({ title, desc, icon }) => (
           <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all">
             <div class="w-12 h-12 bg-green-50 text-green-700 rounded-full flex items-center justify-center mb-6">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {icon === 'lock' && <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+              {icon === 'pin' && <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+              {icon === 'ticket' && <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h2m6-14h2a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2h-2M9 5v14" /></svg>}
+              {icon === 'seat' && <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h6a2 2 0 012 2v8h2a2 2 0 012 2v2H6a2 2 0 01-2-2V6a2 2 0 012-2zm0 10h8" /></svg>}
             </div>
-            <h3 class="text-lg font-bold mb-2">{title}</h3>
+            <h3 class="text-lg font-bold mb-3">{title}</h3>
             <p class="text-gray-500 text-sm leading-relaxed">{desc}</p>
           </div>
         ))}
@@ -214,19 +241,22 @@ const features = [
     </section>
 
     <!-- CTA -->
-    <section class="bg-green-700 text-white px-6 py-20 text-center relative overflow-hidden">
-      <h2 class="text-3xl lg:text-4xl font-bold mb-4">Ready to travel?</h2>
-      <p class="text-green-200 mb-10 max-w-xl mx-auto">Join thousands of passengers who book with MaidAutos every day for a safer, faster, and more convenient travel experience.</p>
-      <a href={APP_URL} class="inline-flex items-center gap-2 bg-white text-green-700 px-10 py-4 rounded-full text-lg font-bold hover:bg-green-50 transition-colors shadow-lg">
-        Book Your Ticket Now
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-      </a>
+    <section class="relative py-20 px-6 text-center overflow-hidden" style="background-color: #0b1c30;">
+      <div class="absolute -right-20 -top-20 w-96 h-96 bg-green-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative z-10">
+        <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">Ready to travel?</h2>
+        <p class="text-white/70 mb-10 max-w-xl mx-auto">Join thousands of passengers who book with MaidAutos every day for a safer, faster, and more convenient travel experience.</p>
+        <a href={APP_URL} class="inline-flex items-center gap-2 bg-green-600 text-white px-10 py-4 rounded-full text-lg font-bold hover:bg-green-500 transition-colors shadow-xl">
+          Book Your Ticket Now
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </a>
+      </div>
     </section>
 
   </main>
 
   <!-- Footer -->
-  <footer class="bg-green-950 text-green-100">
+  <footer class="text-white/60 border-t border-white/10" style="background-color: #0b1c30;">
     <div class="max-w-5xl mx-auto px-6 lg:px-16 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
       <div class="space-y-4">
         <div class="flex items-center gap-2">
@@ -235,10 +265,10 @@ const features = [
           </div>
           <span class="font-display font-bold text-lg text-white">MaidAutos</span>
         </div>
-        <p class="text-sm text-green-300/80 leading-relaxed">Providing high-trust, safe, and reliable intercity transport services across Nigeria using digital-first solutions.</p>
+        <p class="text-sm leading-relaxed">Providing high-trust, safe, and reliable intercity transport services across Nigeria using digital-first solutions.</p>
       </div>
       <div>
-        <h4 class="text-xs font-bold uppercase tracking-widest text-green-400 mb-5">Company</h4>
+        <h4 class="text-xs font-bold uppercase tracking-widest text-green-300 mb-5">Company</h4>
         <ul class="space-y-3 text-sm">
           <li><a href="#why-us" class="hover:text-white transition-colors">Why Choose Us</a></li>
           <li><a href="#how-it-works" class="hover:text-white transition-colors">How It Works</a></li>
@@ -247,7 +277,7 @@ const features = [
         </ul>
       </div>
       <div>
-        <h4 class="text-xs font-bold uppercase tracking-widest text-green-400 mb-5">Account</h4>
+        <h4 class="text-xs font-bold uppercase tracking-widest text-green-300 mb-5">Account</h4>
         <ul class="space-y-3 text-sm">
           <li><a href={APP_URL} class="hover:text-white transition-colors">Create Account</a></li>
           <li><a href={APP_URL} class="hover:text-white transition-colors">Sign In</a></li>
@@ -256,16 +286,16 @@ const features = [
         </ul>
       </div>
       <div>
-        <h4 class="text-xs font-bold uppercase tracking-widest text-green-400 mb-5">Contact</h4>
+        <h4 class="text-xs font-bold uppercase tracking-widest text-green-300 mb-5">Contact</h4>
         <ul class="space-y-3 text-sm">
           <li><a href="mailto:help@maidautos.com" class="hover:text-white transition-colors">help@maidautos.com</a></li>
           <li><a href="tel:+2348000000000" class="hover:text-white transition-colors">+234 800 000 0000</a></li>
-          <li class="text-green-300/60">Main Terminal, Abuja, Nigeria</li>
+          <li class="text-white/40">Main Terminal, Abuja, Nigeria</li>
         </ul>
       </div>
     </div>
     <div class="border-t border-white/10 py-6">
-      <div class="max-w-5xl mx-auto px-6 lg:px-16 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-green-300/60">
+      <div class="max-w-5xl mx-auto px-6 lg:px-16 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/40">
         <p>© {new Date().getFullYear()} MaidAutos. All rights reserved.</p>
         <div class="flex gap-6">
           <a href="#" class="hover:text-white transition-colors">Payment Partners</a>
