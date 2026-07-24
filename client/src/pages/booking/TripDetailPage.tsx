@@ -46,36 +46,36 @@ export function TripDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+      <div className="bg-slate-900 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold text-gray-900">Select Your Seat</span>
+        <span className="font-bold text-white">Select Your Seat</span>
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
         {/* Trip summary */}
-        <div className="bg-white rounded-xl border p-4">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
             <MapPin className="w-4 h-4 text-green-600" />
-            <span className="font-semibold">{pickupStop?.stop.name || trip.route.originStop.name}</span>
+            <span className="font-bold text-gray-900">{pickupStop?.stop.name || trip.route.originStop.name}</span>
             <ArrowRight className="w-4 h-4 text-gray-400" />
-            <span className="font-semibold">{dropoffStop?.stop.name || trip.route.destinationStop.name}</span>
+            <span className="font-bold text-gray-900">{dropoffStop?.stop.name || trip.route.destinationStop.name}</span>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-sm text-gray-600">
-            <div><p className="text-xs text-gray-400">Departure</p><p className="font-medium">{formatDateTime(trip.departureDateTime)}</p></div>
-            <div><p className="text-xs text-gray-400">Duration</p><p className="font-medium">{formatDuration(trip.route.estimatedDurationMinutes)}</p></div>
-            <div><p className="text-xs text-gray-400">Price</p><p className="font-medium text-green-600">{formatCurrency(price)}</p></div>
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Departure</p><p className="font-semibold text-gray-900 mt-0.5">{formatDateTime(trip.departureDateTime)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Duration</p><p className="font-semibold text-gray-900 mt-0.5">{formatDuration(trip.route.estimatedDurationMinutes)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Price</p><p className="font-semibold text-green-600 mt-0.5">{formatCurrency(price)}</p></div>
           </div>
-          <div className="mt-3 pt-3 border-t flex items-center gap-2 text-sm text-gray-500">
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
             <Bus className="w-4 h-4" />
             <span>{trip.car.make} {trip.car.model} · {trip.car.hasAC ? 'AC' : 'No AC'} · {trip.car.type}</span>
           </div>
         </div>
 
         {/* Seat map */}
-        <div className="bg-white rounded-xl border p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Choose a seat</h3>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="font-bold text-gray-900 mb-4">Choose a seat</h3>
           <SeatGrid
             carType={trip.car.type}
             capacity={trip.car.capacity}
@@ -89,7 +89,7 @@ export function TripDetailPage() {
         <button
           disabled={!selectedSeat}
           onClick={handleContinue}
-          className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold text-lg transition-colors"
+          className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-green-900/20"
         >
           {selectedSeat ? `Continue — Seat ${selectedSeat} · ${formatCurrency(price)}` : 'Select a seat to continue'}
         </button>

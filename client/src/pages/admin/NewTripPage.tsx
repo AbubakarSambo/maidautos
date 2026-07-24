@@ -123,24 +123,24 @@ export function AdminNewTripPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/admin/trips')} className="p-1.5 hover:bg-gray-100 rounded-lg">
+        <button onClick={() => navigate('/admin/trips')} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">New Trip</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">New Trip</h1>
       </div>
 
-      <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
         <button
           type="button"
           onClick={() => setMode('single')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'single' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'single' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
         >
           One-time
         </button>
         <button
           type="button"
           onClick={() => setMode('recurring')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'recurring' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'recurring' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
         >
           Recurring
         </button>
@@ -149,14 +149,14 @@ export function AdminNewTripPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
         {/* Route */}
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Route & Schedule</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Route &amp; Schedule</h2>
 
           <div>
             <label className="text-sm font-medium text-gray-700">Route *</label>
             <select
               {...register('routeId')}
-              className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
             >
               <option value="">Select a route</option>
               {routes
@@ -172,7 +172,7 @@ export function AdminNewTripPage() {
           </div>
 
           {selectedRoute && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm">
+            <div className="bg-gray-50 rounded-xl p-3 text-sm">
               <p className="font-medium text-gray-700 mb-1">Stops on this route</p>
               <div className="space-y-1">
                 {selectedRoute.routeStops.map((rs) => (
@@ -195,7 +195,7 @@ export function AdminNewTripPage() {
                 {...register('departureDateTime')}
                 type="datetime-local"
                 min={minDateTime}
-                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               />
               {errors.departureDateTime && (
                 <p className="text-red-500 text-xs mt-1">{errors.departureDateTime.message}</p>
@@ -210,7 +210,7 @@ export function AdminNewTripPage() {
                     {...register('startDate')}
                     type="date"
                     min={minDate}
-                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                   />
                   {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate.message}</p>}
                 </div>
@@ -220,7 +220,7 @@ export function AdminNewTripPage() {
                     {...register('endDate')}
                     type="date"
                     min={minDate}
-                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                   />
                   {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate.message}</p>}
                 </div>
@@ -234,7 +234,7 @@ export function AdminNewTripPage() {
                       key={d.value}
                       type="button"
                       onClick={() => toggleDay(d.value)}
-                      className={`w-11 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                      className={`w-11 py-2 rounded-xl text-xs font-semibold border transition-colors ${
                         daysOfWeek.includes(d.value)
                           ? 'bg-green-600 text-white border-green-600'
                           : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
@@ -251,7 +251,7 @@ export function AdminNewTripPage() {
                 <input
                   {...register('departureTime')}
                   type="time"
-                  className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                 />
                 {errors.departureTime && <p className="text-red-500 text-xs mt-1">{errors.departureTime.message}</p>}
               </div>
@@ -270,17 +270,17 @@ export function AdminNewTripPage() {
                 min={0}
                 step={100}
                 placeholder="e.g. 15000"
-                className="w-full pl-7 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
         {/* Vehicle & Driver */}
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Vehicle & Driver</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Vehicle &amp; Driver</h2>
           {mode === 'recurring' && (
-            <p className="text-xs text-amber-600 -mt-1">
+            <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 -mt-1">
               This same car and driver will be assigned to every generated trip — double-check availability across the whole date range.
             </p>
           )}
@@ -289,7 +289,7 @@ export function AdminNewTripPage() {
             <label className="text-sm font-medium text-gray-700">Car *</label>
             <select
               {...register('carId')}
-              className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
             >
               <option value="">Select a car</option>
               {cars.map((c) => (
@@ -306,7 +306,7 @@ export function AdminNewTripPage() {
           </div>
 
           {selectedCar && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+            <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-600">
               {selectedCar.make} {selectedCar.model} · {selectedCar.year} · {selectedCar.capacity} passenger seats
               {selectedCar.hasAC ? ' · Air conditioned' : ''}
             </div>
@@ -316,7 +316,7 @@ export function AdminNewTripPage() {
             <label className="text-sm font-medium text-gray-700">Driver *</label>
             <select
               {...register('driverId')}
-              className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
             >
               <option value="">Select a driver</option>
               {drivers.map((d) => (
@@ -333,7 +333,7 @@ export function AdminNewTripPage() {
         </div>
 
         {/* Notes */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <label className="text-sm font-medium text-gray-700">
             Notes <span className="text-gray-400 font-normal">(optional)</span>
           </label>
@@ -341,7 +341,7 @@ export function AdminNewTripPage() {
             {...register('notes')}
             rows={2}
             placeholder="Any internal notes about this trip..."
-            className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+            className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
           />
         </div>
 
@@ -349,14 +349,14 @@ export function AdminNewTripPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-colors"
+            className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-green-900/10"
           >
             {isPending ? 'Creating...' : mode === 'single' ? 'Create Trip' : 'Create Trips'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/admin/trips')}
-            className="px-6 py-3 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-gray-700 transition-colors"
           >
             Cancel
           </button>

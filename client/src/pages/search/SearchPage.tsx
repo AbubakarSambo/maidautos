@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   MapPin, Calendar, Search, Bus, Clock, ArrowRight, Menu,
-  ShieldCheck, Armchair, Star, Banknote, ChevronDown, Ticket, Share2, Globe,
+  ShieldCheck, Armchair, Star, Banknote, Ticket, Share2, Globe,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'

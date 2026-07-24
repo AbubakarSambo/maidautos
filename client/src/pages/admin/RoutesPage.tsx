@@ -36,21 +36,21 @@ function AddStopRow({ route, stops, onDone }: { route: Route; stops: Stop[]; onD
   })
 
   return (
-    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-dashed">
-      <select value={stopId} onChange={(e) => setStopId(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm">
+    <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-gray-200">
+      <select value={stopId} onChange={(e) => setStopId(e.target.value)} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
         <option value="">Select stop to add...</option>
         {available.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
       </select>
-      <input value={distance} onChange={(e) => setDistance(e.target.value)} type="number" placeholder="Distance (km)" className="w-32 px-3 py-2 border rounded-lg text-sm" />
-      <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="Price from origin (₦)" className="w-40 px-3 py-2 border rounded-lg text-sm" />
+      <input value={distance} onChange={(e) => setDistance(e.target.value)} type="number" placeholder="Distance (km)" className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+      <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="Price from origin (₦)" className="w-40 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
       <button
         disabled={!stopId || !distance || !price || isPending}
         onClick={() => addStop()}
-        className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
+        className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 transition-colors"
       >
         Add
       </button>
-      <button onClick={onDone} className="p-2 text-gray-400 hover:text-gray-600">
+      <button onClick={onDone} className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
         <Check className="w-4 h-4" />
       </button>
     </div>
@@ -75,9 +75,9 @@ function EditableStopRow({ rs }: { rs: RouteStop }) {
 
   if (!editing) {
     return (
-      <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-3 hover:bg-gray-50 rounded px-1 -mx-1">
+      <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors">
         <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
-        <span className="text-green-600 font-medium">{formatCurrency(rs.priceFromOrigin)}</span>
+        <span className="text-green-600 font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
       </button>
     )
   }
@@ -88,24 +88,24 @@ function EditableStopRow({ rs }: { rs: RouteStop }) {
         value={distance}
         onChange={(e) => setDistance(e.target.value)}
         type="number"
-        className="w-20 px-2 py-1 border rounded text-xs"
+        className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
       />
       <span className="text-gray-400 text-xs">km</span>
       <input
         value={price}
         onChange={(e) => setPrice(e.target.value)}
         type="number"
-        className="w-24 px-2 py-1 border rounded text-xs"
+        className="w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
       />
       <button
         disabled={isPending}
         onClick={() => save()}
-        className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+        className="p-1 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50 transition-colors"
         title="Save"
       >
         <Check className="w-3.5 h-3.5" />
       </button>
-      <button onClick={() => { setEditing(false); setDistance(String(rs.distanceFromOriginKm)); setPrice(String(rs.priceFromOrigin)) }} className="p-1 text-gray-400 hover:text-red-600" title="Cancel">
+      <button onClick={() => { setEditing(false); setDistance(String(rs.distanceFromOriginKm)); setPrice(String(rs.priceFromOrigin)) }} className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancel">
         <X className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -172,18 +172,18 @@ export function AdminRoutesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Routes</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Routes</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700"
+          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 shadow-lg shadow-green-900/10 transition-colors"
         >
           <Plus className="w-4 h-4" /> Add Route
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border p-4 space-y-4">
-          <h3 className="font-semibold text-gray-900">Add New Route</h3>
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h3 className="font-bold text-gray-900">Add New Route</h3>
           <p className="text-xs text-gray-500">
             The last stop in the list below should be the destination. Prices are cumulative from the origin, so a passenger's
             fare is the difference between their pickup and dropoff stop prices.
@@ -191,32 +191,32 @@ export function AdminRoutesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-500">Origin</label>
-              <select {...register('originStopId', { required: true })} className="mt-0.5 w-full px-3 py-2 border rounded-lg text-sm">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Origin</label>
+              <select {...register('originStopId', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
                 <option value="">Select stop...</option>
                 {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500">Destination</label>
-              <select {...register('destinationStopId', { required: true })} className="mt-0.5 w-full px-3 py-2 border rounded-lg text-sm">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Destination</label>
+              <select {...register('destinationStopId', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
                 <option value="">Select stop...</option>
                 {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500">Estimated Duration (minutes)</label>
-              <input {...register('estimatedDurationMinutes', { required: true })} type="number" placeholder="360" className="mt-0.5 w-full px-3 py-2 border rounded-lg text-sm" />
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Estimated Duration (minutes)</label>
+              <input {...register('estimatedDurationMinutes', { required: true })} type="number" placeholder="360" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-gray-500">Route Stops (in order, origin first)</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Route Stops (in order, origin first)</label>
               <button
                 type="button"
                 onClick={() => append({ stopId: '', distanceFromOriginKm: '0', priceFromOrigin: '0' })}
-                className="text-xs text-green-700 font-medium hover:underline"
+                className="text-xs text-green-700 font-bold hover:underline"
               >
                 + Add stop
               </button>
@@ -224,7 +224,7 @@ export function AdminRoutesPage() {
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 w-4">{index + 1}</span>
-                <select {...register(`stops.${index}.stopId`, { required: true })} className="flex-1 px-3 py-2 border rounded-lg text-sm">
+                <select {...register(`stops.${index}.stopId`, { required: true })} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
                   <option value="">Select stop...</option>
                   {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
                 </select>
@@ -232,31 +232,31 @@ export function AdminRoutesPage() {
                   {...register(`stops.${index}.distanceFromOriginKm`, { required: true })}
                   type="number"
                   placeholder="Distance (km)"
-                  className="w-32 px-3 py-2 border rounded-lg text-sm"
+                  className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                 />
                 <input
                   {...register(`stops.${index}.priceFromOrigin`, { required: true })}
                   type="number"
                   placeholder="Price (₦)"
-                  className="w-32 px-3 py-2 border rounded-lg text-sm"
+                  className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                 />
                 {fields.length > 1 && (
-                  <button type="button" onClick={() => remove(index)} className="p-2 text-gray-400 hover:text-red-600">
+                  <button type="button" onClick={() => remove(index)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
             ))}
             {destinationId && !fields.some((f, i) => watch(`stops.${i}.stopId`) === destinationId) && (
-              <p className="text-xs text-amber-600">Tip: the destination stop should also appear as the last row above, with its full-route price.</p>
+              <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tip: the destination stop should also appear as the last row above, with its full-route price.</p>
             )}
           </div>
 
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
+            <button type="submit" disabled={isPending} className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-900/10 transition-colors">
               Save Route
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50">
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
               Cancel
             </button>
           </div>
@@ -270,20 +270,20 @@ export function AdminRoutesPage() {
           {routes.map((route) => {
             const isEditing = editingRouteId === route.id
             return (
-              <div key={route.id} className="bg-white rounded-xl border p-4">
+              <div key={route.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-2 flex-1">
-                    <span className="font-semibold text-gray-900">{route.originStop.name}</span>
+                    <span className="font-bold text-gray-900">{route.originStop.name}</span>
                     <ArrowRight className="w-4 h-4 text-gray-400" />
-                    <span className="font-semibold text-gray-900">{route.destinationStop.name}</span>
+                    <span className="font-bold text-gray-900">{route.destinationStop.name}</span>
                   </div>
                   <span className="text-sm text-gray-500">{formatDuration(route.estimatedDurationMinutes)}</span>
-                  <button onClick={() => toggle(route.id)} className="text-gray-400 hover:text-gray-600" title={route.isActive ? 'Deactivate' : 'Activate'}>
+                  <button onClick={() => toggle(route.id)} className="text-gray-400 hover:text-gray-600 transition-colors" title={route.isActive ? 'Deactivate' : 'Activate'}>
                     {route.isActive ? <ToggleRight className="w-5 h-5 text-green-600" /> : <ToggleLeft className="w-5 h-5" />}
                   </button>
                   <button
                     onClick={() => setEditingRouteId(isEditing ? null : route.id)}
-                    className={isEditing ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}
+                    className={isEditing ? 'text-green-600 transition-colors' : 'text-gray-400 hover:text-gray-600 transition-colors'}
                     title="Manage stops"
                   >
                     <Pencil className="w-4 h-4" />
@@ -291,7 +291,7 @@ export function AdminRoutesPage() {
                   {user?.role === 'SUPER_ADMIN' && (
                     <button
                       onClick={() => { if (confirm(`Delete the ${route.originStop.name} → ${route.destinationStop.name} route? This cannot be undone.`)) removeRoute(route.id) }}
-                      className="text-gray-400 hover:text-red-600"
+                      className="text-gray-400 hover:text-red-600 transition-colors"
                       title="Delete route"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -312,13 +312,13 @@ export function AdminRoutesPage() {
                         ) : (
                           <>
                             <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
-                            <span className="text-green-600 font-medium">{formatCurrency(rs.priceFromOrigin)}</span>
+                            <span className="text-green-600 font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
                           </>
                         )}
                         {isEditing && !isEndpoint && (
                           <button
                             onClick={() => { if (confirm(`Remove ${rs.stop.name} from this route?`)) removeStop(rs.id) }}
-                            className="p-1 text-gray-400 hover:text-red-600"
+                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Remove stop"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -333,7 +333,7 @@ export function AdminRoutesPage() {
                 {isEditing && <AddStopRow route={route} stops={stops} onDone={() => setEditingRouteId(null)} />}
 
                 {!route.isActive && (
-                  <p className="text-xs text-red-500 mt-2">Inactive — not bookable</p>
+                  <p className="text-xs text-red-500 mt-2 font-medium">Inactive — not bookable</p>
                 )}
               </div>
             )

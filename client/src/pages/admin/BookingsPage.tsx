@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle, XCircle } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -37,8 +37,8 @@ export function AdminBookingsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-        <button onClick={() => navigate('/admin/bookings/new')} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Bookings</h1>
+        <button onClick={() => navigate('/admin/bookings/new')} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 transition-colors">
           <Plus className="w-4 h-4" /> New Booking
         </button>
       </div>
@@ -49,7 +49,7 @@ export function AdminBookingsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, phone, or ticket code..."
-          className="w-full pl-9 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
         />
       </div>
 
@@ -60,11 +60,11 @@ export function AdminBookingsPage() {
           {filtered.map((b) => {
             const passengerName = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Guest'
             return (
-              <div key={b.id} className="bg-white rounded-xl border p-4">
+              <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900">{passengerName}</span>
+                      <span className="font-bold text-gray-900">{passengerName}</span>
                       <span className="text-xs text-gray-400 font-mono">{b.ticketCode}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-1">
@@ -82,13 +82,13 @@ export function AdminBookingsPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${b.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${b.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                       {b.paymentStatus}
                     </span>
                     {b.paymentStatus === 'PENDING' && b.paymentMethod === 'CASH' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); recordPayment(b.id) }}
-                        className="flex items-center gap-1 text-xs text-green-600 font-semibold hover:underline"
+                        className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Mark Paid
                       </button>

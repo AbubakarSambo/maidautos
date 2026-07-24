@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, Share2, Download, ArrowRight, Bus } from 'lucide-react'
+import { CheckCircle, Share2, ArrowRight, Bus } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency, getWhatsAppShareUrl } from '@/lib/utils'
 import type { Booking } from '@/types'
@@ -28,26 +28,28 @@ export function ConfirmationPage() {
       <div className="max-w-sm w-full space-y-4">
         {/* Success badge */}
         <div className="text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-2" />
+          <div className="w-16 h-16 bg-green-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <CheckCircle className="w-9 h-9 text-green-600" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">Booking Confirmed!</h1>
           <p className="text-gray-500 mt-1">Your ticket has been issued</p>
         </div>
 
         {/* Ticket card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Header strip */}
-          <div className="bg-green-600 px-5 py-4">
+          <div className="px-5 py-4" style={{ backgroundColor: '#0b1c30' }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
-                <Bus className="w-5 h-5" />
+                <Bus className="w-5 h-5 text-green-300" />
                 <span className="font-bold text-lg">MaidAutos</span>
               </div>
-              <span className="text-green-100 text-sm font-mono">{booking.ticketCode}</span>
+              <span className="text-green-300 text-sm font-mono">{booking.ticketCode}</span>
             </div>
           </div>
 
           {/* Route */}
-          <div className="px-5 py-4 border-b">
+          <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <p className="text-xs text-gray-400">From</p>
@@ -62,7 +64,7 @@ export function ConfirmationPage() {
           </div>
 
           {/* Details grid */}
-          <div className="px-5 py-4 grid grid-cols-2 gap-4 border-b">
+          <div className="px-5 py-4 grid grid-cols-2 gap-4 border-b border-gray-100">
             <div>
               <p className="text-xs text-gray-400">Departure</p>
               <p className="font-semibold text-gray-900 text-sm">{departure}</p>
@@ -83,7 +85,7 @@ export function ConfirmationPage() {
 
           {/* Payment status */}
           <div className="px-5 py-3">
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+            <span className={`text-xs px-2 py-1 rounded-full font-semibold ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
               {booking.paymentStatus === 'PAID' ? 'Paid' : 'Payment Pending — Pay to driver/agent before boarding'}
             </span>
           </div>
@@ -95,7 +97,7 @@ export function ConfirmationPage() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm"
+            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-green-900/10"
           >
             <Share2 className="w-4 h-4" /> Share via WhatsApp
           </a>

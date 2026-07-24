@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Plus, Bus, MapPin, Clock } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { tripsApi } from '@/api'
-import { formatDateTime, formatCurrency } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Trip, TripStatus } from '@/types'
 
@@ -43,23 +43,26 @@ export function AdminTripDetailPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/admin/trips')} className="p-1.5 hover:bg-gray-100 rounded-lg">
+        <button onClick={() => navigate('/admin/trips')} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-bold text-gray-900">{trip.route.originStop.name} → {trip.route.destinationStop.name}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">{trip.route.originStop.name} → {trip.route.destinationStop.name}</h1>
       </div>
 
       {/* Trip info */}
-      <div className="bg-white rounded-xl border p-4 grid grid-cols-2 gap-4 text-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-2 gap-4 text-sm">
         <div><p className="text-xs text-gray-400">Departure</p><p className="font-semibold">{formatDateTime(trip.departureDateTime)}</p></div>
         <div><p className="text-xs text-gray-400">Vehicle</p><p className="font-semibold">{trip.car.make} {trip.car.model} · {trip.car.plateNumber}</p></div>
         <div><p className="text-xs text-gray-400">Driver</p><p className="font-semibold">{trip.driver.firstName} {trip.driver.lastName}</p></div>
-        <div><p className="text-xs text-gray-400">Status</p><p className="font-semibold">{trip.status}</p></div>
+        <div>
+          <p className="text-xs text-gray-400">Status</p>
+          <span className="inline-block mt-0.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-green-100 text-green-700">{trip.status}</span>
+        </div>
       </div>
 
       {/* Status actions */}
       {nextStatuses.length > 0 && (
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Update Status</p>
           <div className="flex gap-2 flex-wrap">
             {nextStatuses.map((s) => (
@@ -67,7 +70,7 @@ export function AdminTripDetailPage() {
                 key={s}
                 disabled={updatingStatus}
                 onClick={() => updateStatus(s)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${s === 'CANCELLED' ? 'border border-red-300 text-red-600 hover:bg-red-50' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${s === 'CANCELLED' ? 'border border-red-300 text-red-600 hover:bg-red-50' : 'bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-900/10'}`}
               >
                 Mark as {s}
               </button>
@@ -77,25 +80,25 @@ export function AdminTripDetailPage() {
       )}
 
       {/* Add location update */}
-      <div className="bg-white rounded-xl border p-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Post Location Update</p>
         <div className="space-y-2">
           <input
             value={checkpoint}
             onChange={(e) => setCheckpoint(e.target.value)}
             placeholder="e.g. Arrived Kaduna"
-            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
           />
           <input
             value={checkpointNote}
             onChange={(e) => setCheckpointNote(e.target.value)}
             placeholder="Optional note (e.g. 15 min stop)"
-            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
           />
           <button
             disabled={!checkpoint || addingUpdate}
             onClick={() => addUpdate()}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-900/10"
           >
             <Plus className="w-4 h-4" /> Post Update
           </button>
@@ -104,7 +107,7 @@ export function AdminTripDetailPage() {
 
       {/* Status updates timeline */}
       {trip.statusUpdates.length > 0 && (
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Location History</p>
           <div className="space-y-3">
             {trip.statusUpdates.map((u) => (
@@ -122,10 +125,10 @@ export function AdminTripDetailPage() {
       )}
 
       {/* Bookings */}
-      <div className="bg-white rounded-xl border p-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Passengers</p>
-          <button onClick={() => navigate(`/admin/bookings/new?tripId=${trip.id}`)} className="flex items-center gap-1 text-xs text-green-600 font-semibold hover:underline">
+          <button onClick={() => navigate(`/admin/bookings/new?tripId=${trip.id}`)} className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline">
             <Plus className="w-3 h-3" /> Add booking
           </button>
         </div>

@@ -26,8 +26,9 @@ export function PaymentCallbackPage() {
   }, [reference])
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-gray-500">
-      Confirming your payment...
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white" style={{ backgroundColor: '#0b1c30' }}>
+      <div className="w-10 h-10 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+      <p className="text-white/70">Confirming your payment...</p>
     </div>
   )
 }

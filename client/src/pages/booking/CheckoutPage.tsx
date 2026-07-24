@@ -77,41 +77,41 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+      <div className="bg-slate-900 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold text-gray-900">Checkout</span>
+        <span className="font-bold text-white">Checkout</span>
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
         {/* Order summary */}
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Order Summary</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Order Summary</p>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">Seat {seatNumber}</span>
+            <span className="text-gray-700 font-medium">Seat {seatNumber}</span>
             <span className="font-bold text-lg text-green-600">{formatCurrency(amount)}</span>
           </div>
         </div>
 
         {/* Guest details if not logged in */}
         {!isAuthenticated && (
-          <div className="bg-white rounded-xl border p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Passenger Details</p>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Passenger Details</p>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-gray-700">Full name *</label>
-                <input {...register('guestName')} className="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Enter your full name" />
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Full name *</label>
+                <input {...register('guestName')} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="Enter your full name" />
                 {errors.guestName && <p className="text-red-500 text-xs mt-1">{errors.guestName.message}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Phone *</label>
-                <input {...register('guestPhone')} className="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="08012345678" />
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone *</label>
+                <input {...register('guestPhone')} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="08012345678" />
                 {errors.guestPhone && <p className="text-red-500 text-xs mt-1">{errors.guestPhone.message}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Email (for ticket delivery)</label>
-                <input {...register('guestEmail')} type="email" className="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="you@example.com" />
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email (for ticket delivery)</label>
+                <input {...register('guestEmail')} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="you@example.com" />
                 {errors.guestEmail && <p className="text-red-500 text-xs mt-1">{errors.guestEmail.message}</p>}
               </div>
             </div>
@@ -119,18 +119,18 @@ export function CheckoutPage() {
         )}
 
         {/* Payment method */}
-        <div className="bg-white rounded-xl border p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Payment Method</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Payment Method</p>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setPaymentMethod('PAYSTACK')}
-              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-medium transition-colors ${paymentMethod === 'PAYSTACK' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600'}`}
+              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-semibold transition-colors ${paymentMethod === 'PAYSTACK' ? 'border-green-600 bg-green-600/10 text-green-700' : 'border-gray-200 text-gray-600'}`}
             >
               <CreditCard className="w-4 h-4" /> Pay Online
             </button>
             <button
               onClick={() => setPaymentMethod('CASH')}
-              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-medium transition-colors ${paymentMethod === 'CASH' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600'}`}
+              className={`flex items-center gap-2 p-3 border-2 rounded-xl text-sm font-semibold transition-colors ${paymentMethod === 'CASH' ? 'border-green-600 bg-green-600/10 text-green-700' : 'border-gray-200 text-gray-600'}`}
             >
               <Banknote className="w-4 h-4" /> Cash
             </button>
@@ -144,7 +144,7 @@ export function CheckoutPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-4 rounded-xl font-semibold text-lg transition-colors"
+            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-green-900/20"
           >
             {isPending ? 'Processing...' : paymentMethod === 'PAYSTACK' ? `Pay ${formatCurrency(amount)}` : `Confirm Booking`}
           </button>
@@ -153,7 +153,7 @@ export function CheckoutPage() {
         {!isAuthenticated && (
           <p className="text-center text-sm text-gray-500">
             Already have an account?{' '}
-            <button onClick={() => navigate('/login')} className="text-green-600 font-medium hover:underline">Sign in</button>
+            <button onClick={() => navigate('/login')} className="text-green-700 font-semibold hover:underline">Sign in</button>
           </p>
         )}
       </div>

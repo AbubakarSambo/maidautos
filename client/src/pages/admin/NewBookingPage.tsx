@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { ArrowLeft, Search, User, UserX } from 'lucide-react'
+import { ArrowLeft, Search, UserX } from 'lucide-react'
 import { tripsApi, bookingsApi } from '@/api'
 import apiClient from '@/api/client'
 import { SeatGrid } from '@/components/ui/SeatGrid'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Trip, RouteStop } from '@/types'
+import type { Trip } from '@/types'
 
 type PassengerMode = 'search' | 'guest'
 
@@ -116,21 +116,21 @@ export function AdminNewBookingPage() {
   return (
     <div className="max-w-2xl space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/admin/bookings')} className="p-1.5 hover:bg-gray-100 rounded-lg">
+        <button onClick={() => navigate('/admin/bookings')} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">New Booking</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">New Booking</h1>
       </div>
 
       {/* STEP 1 — Trip */}
-      <div className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <h2 className="font-bold text-gray-900">
           <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">1</span>
           Trip
         </h2>
 
         {preselectedTripId && trip ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+          <div className="bg-green-600/10 border border-green-200 rounded-xl p-3 text-sm">
             <p className="font-semibold text-green-800">
               {trip.route.originStop.name} → {trip.route.destinationStop.name}
             </p>
@@ -139,21 +139,21 @@ export function AdminNewBookingPage() {
         ) : (
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-700">Date</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
               <input
                 type="date"
                 value={tripDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setTripDate(e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Select trip</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Select trip</label>
               <select
                 value={tripId}
                 onChange={(e) => setTripId(e.target.value)}
-                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               >
                 <option value="">Choose a trip...</option>
                 {allTrips.map((t) => (
@@ -172,19 +172,19 @@ export function AdminNewBookingPage() {
 
       {/* STEP 2 — Pickup & Dropoff */}
       {trip && (
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="font-bold text-gray-900">
             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">2</span>
             Boarding & Alighting Stops
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">Pickup stop *</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Pickup stop *</label>
               <select
                 value={pickupStopId}
                 onChange={(e) => { setPickupStopId(e.target.value); setDropoffStopId('') }}
-                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
               >
                 <option value="">Select...</option>
                 {trip.route.routeStops.slice(0, -1).map((rs) => (
@@ -193,12 +193,12 @@ export function AdminNewBookingPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Dropoff stop *</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Dropoff stop *</label>
               <select
                 value={dropoffStopId}
                 onChange={(e) => setDropoffStopId(e.target.value)}
                 disabled={!pickupStopId}
-                className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-50"
+                className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:bg-gray-50"
               >
                 <option value="">Select...</option>
                 {trip.route.routeStops
@@ -214,7 +214,7 @@ export function AdminNewBookingPage() {
           </div>
 
           {amount > 0 && (
-            <div className="text-sm text-green-700 font-semibold bg-green-50 px-3 py-2 rounded-lg">
+            <div className="text-sm text-green-700 font-semibold bg-green-600/10 px-3 py-2 rounded-xl">
               Fare: {formatCurrency(amount)}
             </div>
           )}
@@ -223,8 +223,8 @@ export function AdminNewBookingPage() {
 
       {/* STEP 3 — Seat */}
       {trip && pickupStopId && dropoffStopId && (
-        <div className="bg-white rounded-xl border p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-bold text-gray-900 mb-4">
             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">3</span>
             Seat Selection
           </h2>
@@ -244,8 +244,8 @@ export function AdminNewBookingPage() {
 
       {/* STEP 4 — Passenger */}
       {selectedSeat && (
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="font-bold text-gray-900">
             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">4</span>
             Passenger
           </h2>
@@ -254,16 +254,16 @@ export function AdminNewBookingPage() {
           <div className="flex gap-2">
             <button
               onClick={() => { setPassengerMode('search'); setSelectedUserId(null); setSelectedUserName('') }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                passengerMode === 'search' ? 'bg-green-50 border-green-400 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                passengerMode === 'search' ? 'bg-green-600/10 border-green-600 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
               <Search className="w-3.5 h-3.5" /> Existing passenger
             </button>
             <button
               onClick={() => { setPassengerMode('guest'); setSelectedUserId(null); setSelectedUserName('') }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                passengerMode === 'guest' ? 'bg-green-50 border-green-400 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                passengerMode === 'guest' ? 'bg-green-600/10 border-green-600 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
               <UserX className="w-3.5 h-3.5" /> Walk-in / Guest
@@ -273,7 +273,7 @@ export function AdminNewBookingPage() {
           {passengerMode === 'search' ? (
             <div className="space-y-3">
               {selectedUserId ? (
-                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center gap-3 bg-green-600/10 border border-green-200 rounded-xl p-3">
                   <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     {selectedUserName[0]}
                   </div>
@@ -287,18 +287,18 @@ export function AdminNewBookingPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Search by name or phone</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search by name or phone</label>
                   <div className="relative mt-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       value={passengerSearch}
                       onChange={(e) => setPassengerSearch(e.target.value)}
                       placeholder="Start typing..."
-                      className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                     />
                   </div>
                   {passengerSearch.length >= 2 && (
-                    <div className="mt-1 border rounded-lg overflow-hidden">
+                    <div className="mt-1.5 border border-gray-200 rounded-xl overflow-hidden">
                       {searching && (
                         <p className="px-3 py-2 text-sm text-gray-400">Searching...</p>
                       )}
@@ -332,32 +332,32 @@ export function AdminNewBookingPage() {
           ) : (
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-gray-700">Full name</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Full name</label>
                 <input
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                   placeholder="Passenger's full name"
-                  className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Phone *</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone *</label>
                   <input
                     value={guestPhone}
                     onChange={(e) => setGuestPhone(e.target.value)}
                     placeholder="08012345678"
-                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Email</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label>
                   <input
                     value={guestEmail}
                     onChange={(e) => setGuestEmail(e.target.value)}
                     type="email"
                     placeholder="For ticket delivery"
-                    className="mt-1 w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -368,8 +368,8 @@ export function AdminNewBookingPage() {
 
       {/* STEP 5 — Payment */}
       {isReadyToBook && (
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="font-bold text-gray-900">
             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-xs font-bold mr-2">5</span>
             Payment Method
           </h2>
@@ -380,7 +380,7 @@ export function AdminNewBookingPage() {
                 onClick={() => setPaymentMethod(m)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
                   paymentMethod === m
-                    ? 'border-green-600 bg-green-50 text-green-700'
+                    ? 'border-green-600 bg-green-600/10 text-green-700'
                     : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -389,12 +389,12 @@ export function AdminNewBookingPage() {
             ))}
           </div>
           {paymentMethod === 'CASH' && (
-            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">
               Booking will be marked as paid immediately. Collect cash before the passenger boards.
             </p>
           )}
           {paymentMethod === 'PAYSTACK' && (
-            <p className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+            <p className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl">
               Booking will be confirmed but marked as pending until payment is completed via Paystack.
             </p>
           )}
@@ -403,8 +403,8 @@ export function AdminNewBookingPage() {
 
       {/* Summary + Submit */}
       {isReadyToBook && (
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Summary</h2>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="font-bold text-gray-900">Summary</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-gray-500">Route</span><span className="font-medium">{pickupStop?.stop.name} → {dropoffStop?.stop.name}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Departure</span><span className="font-medium">{trip && formatDateTime(trip.departureDateTime)}</span></div>
@@ -417,7 +417,7 @@ export function AdminNewBookingPage() {
           <button
             onClick={() => createBooking()}
             disabled={isPending}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-colors"
+            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-bold transition-colors shadow-lg shadow-green-900/10"
           >
             {isPending ? 'Creating booking...' : `Confirm Booking — ${formatCurrency(amount)}`}
           </button>
