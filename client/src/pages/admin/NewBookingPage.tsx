@@ -32,6 +32,8 @@ export function AdminNewBookingPage() {
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+  const [nokName, setNokName] = useState('')
+  const [nokPhone, setNokPhone] = useState('')
 
   // Trip search for admin (if no preselected trip)
   const [tripDate, setTripDate] = useState(new Date().toISOString().split('T')[0])
@@ -103,6 +105,8 @@ export function AdminNewBookingPage() {
         pickupStopId,
         dropoffStopId,
         paymentMethod,
+        nokName: nokName || undefined,
+        nokPhone: nokPhone || undefined,
         ...(passengerMode === 'search' && selectedUserId
           ? { passengerUserId: selectedUserId }
           : { guestName: guestName || undefined, guestEmail: guestEmail || undefined, guestPhone: guestPhone || undefined }),
@@ -356,6 +360,25 @@ export function AdminNewBookingPage() {
               </div>
             </div>
           )}
+
+          {/* Next of kin — optional safety contact */}
+          <div className="pt-3 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Next of Kin (optional)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={nokName}
+                onChange={(e) => setNokName(e.target.value)}
+                placeholder="Next of kin's name"
+                className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <input
+                value={nokPhone}
+                onChange={(e) => setNokPhone(e.target.value)}
+                placeholder="Next of kin's phone"
+                className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -403,6 +426,9 @@ export function AdminNewBookingPage() {
             <div className="flex justify-between"><span className="text-gray-500">Departure</span><span className="font-medium">{trip && formatDateTime(trip.departureDateTime)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Seat</span><span className="font-bold text-primary">{selectedSeat}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Passenger</span><span className="font-medium">{selectedUserName || guestName || guestPhone}</span></div>
+            {(nokName || nokPhone) && (
+              <div className="flex justify-between"><span className="text-gray-500">Next of Kin</span><span className="font-medium">{[nokName, nokPhone].filter(Boolean).join(' · ')}</span></div>
+            )}
             <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-medium">{paymentMethod}</span></div>
             <div className="flex justify-between pt-2 border-t"><span className="font-semibold">Fare</span><span className="font-bold text-lg text-primary">{formatCurrency(amount)}</span></div>
           </div>
