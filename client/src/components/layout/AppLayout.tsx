@@ -1,6 +1,6 @@
 import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Bus, LayoutDashboard, MapPin, Route, Car, Users, BookOpen, LogOut, Menu, X, UserCheck } from 'lucide-react'
+import { LayoutDashboard, MapPin, Route, Bus, Car, Users, BookOpen, LogOut, Menu, X, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { cn } from '@/lib/utils'
@@ -34,7 +34,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-20 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -43,16 +43,12 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 flex flex-col transition-transform lg:static lg:translate-x-0 text-white',
+          'fixed inset-y-0 left-0 z-30 w-64 flex flex-col transition-transform lg:static lg:translate-x-0 text-white bg-primary-dark',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
-        style={{ backgroundColor: '#0b1c30' }}
       >
         <div className="flex items-center gap-2 px-6 py-5 border-b border-white/5">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <Bus className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-white text-lg">MaidAutos</span>
+          <img src="/logo.png" alt="MaidAutos" className="h-8 w-auto brightness-0 invert" />
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3">
@@ -66,9 +62,10 @@ export function AppLayout() {
                   className={({ isActive }) => cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-green-600/15 text-green-300'
+                      ? 'bg-white/10'
                       : 'text-white/60 hover:bg-white/5 hover:text-white'
                   )}
+                  style={({ isActive }) => (isActive ? { color: '#ffb4a8' } : undefined)}
                 >
                   <item.icon className="w-4 h-4 flex-shrink-0" />
                   {item.label}
@@ -80,7 +77,7 @@ export function AppLayout() {
 
         <div className="border-t border-white/5 p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-green-600/15 rounded-full flex items-center justify-center text-green-300 text-sm font-semibold">
+            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-sm font-semibold" style={{ color: '#ffb4a8' }}>
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </div>
             <div className="min-w-0">
@@ -100,9 +97,9 @@ export function AppLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 lg:px-6 gap-4">
+        <header className="h-14 bg-surface border-b border-outline-variant flex items-center px-4 lg:px-6 gap-4">
           <button
-            className="lg:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="lg:hidden p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

@@ -18,7 +18,7 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
       {/* Legend */}
       <div className="flex items-center gap-4 mb-4 text-xs text-gray-600">
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-gray-100 border border-gray-300" /> Available</div>
-        <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-green-600" /> Selected</div>
+        <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-primary" /> Selected</div>
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-gray-400" /> Taken</div>
       </div>
 
@@ -49,8 +49,8 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
                     isTaken
                       ? 'bg-gray-400 border-gray-400 text-white cursor-not-allowed'
                       : isSelected
-                      ? 'bg-green-600 border-green-600 text-white scale-105 shadow-sm'
-                      : 'bg-gray-100 border-gray-300 text-gray-700 hover:border-green-400 hover:bg-green-50 cursor-pointer'
+                      ? 'bg-primary border-primary text-white scale-105 shadow-sm'
+                      : 'bg-gray-100 border-gray-300 text-gray-700 hover:border-primary/40 hover:bg-surface-rose cursor-pointer'
                   )}
                   title={isTaken ? `Seat ${seat} — Booked` : `Seat ${seat}`}
                 >
@@ -63,7 +63,7 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
       </div>
 
       {selectedSeat && (
-        <p className="text-center text-sm text-green-700 font-medium mt-3">Seat {selectedSeat} selected</p>
+        <p className="text-center text-sm text-primary font-medium mt-3">Seat {selectedSeat} selected</p>
       )}
     </div>
   )

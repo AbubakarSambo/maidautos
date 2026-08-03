@@ -70,7 +70,7 @@ export function AdminTripDetailPage() {
                 key={s}
                 disabled={updatingStatus}
                 onClick={() => updateStatus(s)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${s === 'CANCELLED' ? 'border border-red-300 text-red-600 hover:bg-red-50' : 'bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-900/10'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${s === 'CANCELLED' ? 'border border-red-300 text-red-600 hover:bg-red-50' : 'bg-primary text-white hover:brightness-110 shadow-lg'}`}
               >
                 Mark as {s}
               </button>
@@ -87,18 +87,18 @@ export function AdminTripDetailPage() {
             value={checkpoint}
             onChange={(e) => setCheckpoint(e.target.value)}
             placeholder="e.g. Arrived Kaduna"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+            className="w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <input
             value={checkpointNote}
             onChange={(e) => setCheckpointNote(e.target.value)}
             placeholder="Optional note (e.g. 15 min stop)"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+            className="w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <button
             disabled={!checkpoint || addingUpdate}
             onClick={() => addUpdate()}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-900/10"
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:brightness-110 disabled:opacity-50 shadow-lg"
           >
             <Plus className="w-4 h-4" /> Post Update
           </button>
@@ -112,7 +112,7 @@ export function AdminTripDetailPage() {
           <div className="space-y-3">
             {trip.statusUpdates.map((u) => (
               <div key={u.id} className="flex gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-600 mt-1.5 flex-shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{u.checkpointLabel}</p>
                   {u.note && <p className="text-xs text-gray-500">{u.note}</p>}
@@ -128,7 +128,7 @@ export function AdminTripDetailPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Passengers</p>
-          <button onClick={() => navigate(`/admin/bookings/new?tripId=${trip.id}`)} className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline">
+          <button onClick={() => navigate(`/admin/bookings/new?tripId=${trip.id}`)} className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
             <Plus className="w-3 h-3" /> Add booking
           </button>
         </div>

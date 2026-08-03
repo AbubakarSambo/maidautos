@@ -49,7 +49,7 @@ export function AdminStopsPage() {
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Stops</h1>
         <button
           onClick={() => { setEditing(null); reset({ name: '', state: '' }); setShowForm(true) }}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-500 shadow-lg shadow-green-900/10 transition-colors"
+          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:brightness-110 shadow-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Add Stop
         </button>
@@ -61,15 +61,15 @@ export function AdminStopsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500">City / Terminal Name</label>
-              <input {...register('name', { required: true })} placeholder="Abuja" className="mt-0.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+              <input {...register('name', { required: true })} placeholder="Abuja" className="mt-0.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
             <div>
               <label className="text-xs text-gray-500">State</label>
-              <input {...register('state', { required: true })} placeholder="FCT" className="mt-0.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+              <input {...register('state', { required: true })} placeholder="FCT" className="mt-0.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
           </div>
           <div className="flex gap-2">
-            <button type="submit" disabled={creating || updating} className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-900/10 transition-colors">
+            <button type="submit" disabled={creating || updating} className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:brightness-110 disabled:opacity-50 shadow-lg transition-colors">
               Save
             </button>
             <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">

@@ -31,41 +31,41 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Create account</h2>
+      <h2 className="text-xl font-bold text-on-surface mb-6">Create account</h2>
       <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">First name</label>
-            <input {...register('firstName')} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+            <input {...register('firstName')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
           </div>
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Last name</label>
-            <input {...register('lastName')} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+            <input {...register('lastName')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
           </div>
         </div>
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label>
-          <input {...register('email')} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+          <input {...register('email')} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone (optional)</label>
-          <input {...register('phone')} type="tel" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="08012345678" />
+          <input {...register('phone')} type="tel" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="08012345678" />
         </div>
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Password</label>
-          <input {...register('password')} type="password" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+          <input {...register('password')} type="password" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
         </div>
-        <button type="submit" disabled={isPending} className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors mt-2 shadow-lg shadow-green-900/20">
+        <button type="submit" disabled={isPending} className="w-full bg-primary hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors mt-2 shadow-lg">
           {isPending ? 'Creating account...' : 'Create account'}
         </button>
       </form>
       <p className="text-center text-sm text-gray-500 mt-4">
         Already have an account?{' '}
-        <Link to="/login" className="text-green-700 font-semibold hover:underline">Sign in</Link>
+        <Link to="/login" className="text-primary font-semibold hover:underline">Sign in</Link>
       </p>
     </AuthShell>
   )
