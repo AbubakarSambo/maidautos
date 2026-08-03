@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, ToggleLeft, ToggleRight, Plus, X, Trash2, Pencil, Check } from 'lucide-react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { routesApi, stopsApi } from '@/api'
 import { formatDuration, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth'
+import { Select } from '@/components/shared'
 import type { Route, RouteStop, Stop } from '@/types'
 
 type RouteStopForm = { stopId: string; distanceFromOriginKm: string; priceFromOrigin: string }
@@ -36,17 +37,20 @@ function AddStopRow({ route, stops, onDone }: { route: Route; stops: Stop[]; onD
   })
 
   return (
-    <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-gray-200">
-      <select value={stopId} onChange={(e) => setStopId(e.target.value)} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-        <option value="">Select stop to add...</option>
-        {available.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
-      </select>
-      <input value={distance} onChange={(e) => setDistance(e.target.value)} type="number" placeholder="Distance (km)" className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
-      <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="Price from origin (₦)" className="w-40 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+    <div className="flex items-center gap-2 mt-2 pt-3 border-t border-dashed border-outline-variant">
+      <Select
+        value={stopId}
+        onChange={setStopId}
+        placeholder="Select stop to add..."
+        options={available.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
+        className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+      <input value={distance} onChange={(e) => setDistance(e.target.value)} type="number" placeholder="Distance (km)" className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+      <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="Price from origin (₦)" className="w-40 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
       <button
         disabled={!stopId || !distance || !price || isPending}
         onClick={() => addStop()}
-        className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 transition-colors"
+        className="bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:brightness-110 disabled:opacity-50 transition-colors"
       >
         Add
       </button>
@@ -77,7 +81,7 @@ function EditableStopRow({ rs }: { rs: RouteStop }) {
     return (
       <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors">
         <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
-        <span className="text-green-600 font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
+        <span className="text-primary font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
       </button>
     )
   }
@@ -88,19 +92,19 @@ function EditableStopRow({ rs }: { rs: RouteStop }) {
         value={distance}
         onChange={(e) => setDistance(e.target.value)}
         type="number"
-        className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+        className="w-20 px-2 py-1 border border-outline-variant rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
       />
       <span className="text-gray-400 text-xs">km</span>
       <input
         value={price}
         onChange={(e) => setPrice(e.target.value)}
         type="number"
-        className="w-24 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+        className="w-24 px-2 py-1 border border-outline-variant rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
       />
       <button
         disabled={isPending}
         onClick={() => save()}
-        className="p-1 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50 transition-colors"
+        className="p-1 text-primary hover:bg-primary/10 rounded-lg disabled:opacity-50 transition-colors"
         title="Save"
       >
         <Check className="w-3.5 h-3.5" />
@@ -175,7 +179,7 @@ export function AdminRoutesPage() {
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Routes</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 shadow-lg shadow-green-900/10 transition-colors"
+          className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:brightness-110 shadow-lg transition-colors"
         >
           <Plus className="w-4 h-4" /> Add Route
         </button>
@@ -192,21 +196,41 @@ export function AdminRoutesPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Origin</label>
-              <select {...register('originStopId', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-                <option value="">Select stop...</option>
-                {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
-              </select>
+              <Controller
+                name="originStopId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select stop..."
+                    options={stops.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
+                    className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Destination</label>
-              <select {...register('destinationStopId', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-                <option value="">Select stop...</option>
-                {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
-              </select>
+              <Controller
+                name="destinationStopId"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select stop..."
+                    options={stops.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
+                    className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Estimated Duration (minutes)</label>
-              <input {...register('estimatedDurationMinutes', { required: true })} type="number" placeholder="360" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+              <input {...register('estimatedDurationMinutes', { required: true })} type="number" placeholder="360" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
           </div>
 
@@ -216,7 +240,7 @@ export function AdminRoutesPage() {
               <button
                 type="button"
                 onClick={() => append({ stopId: '', distanceFromOriginKm: '0', priceFromOrigin: '0' })}
-                className="text-xs text-green-700 font-bold hover:underline"
+                className="text-xs text-primary font-bold hover:underline"
               >
                 + Add stop
               </button>
@@ -224,21 +248,31 @@ export function AdminRoutesPage() {
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 w-4">{index + 1}</span>
-                <select {...register(`stops.${index}.stopId`, { required: true })} className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-                  <option value="">Select stop...</option>
-                  {stops.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.state})</option>)}
-                </select>
+                <Controller
+                  name={`stops.${index}.stopId`}
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select stop..."
+                      options={stops.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
+                      className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  )}
+                />
                 <input
                   {...register(`stops.${index}.distanceFromOriginKm`, { required: true })}
                   type="number"
                   placeholder="Distance (km)"
-                  className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                  className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <input
                   {...register(`stops.${index}.priceFromOrigin`, { required: true })}
                   type="number"
                   placeholder="Price (₦)"
-                  className="w-32 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                  className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 {fields.length > 1 && (
                   <button type="button" onClick={() => remove(index)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
@@ -253,7 +287,7 @@ export function AdminRoutesPage() {
           </div>
 
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-green-500 disabled:opacity-50 shadow-lg shadow-green-900/10 transition-colors">
+            <button type="submit" disabled={isPending} className="bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:brightness-110 disabled:opacity-50 shadow-lg transition-colors">
               Save Route
             </button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
@@ -279,11 +313,11 @@ export function AdminRoutesPage() {
                   </div>
                   <span className="text-sm text-gray-500">{formatDuration(route.estimatedDurationMinutes)}</span>
                   <button onClick={() => toggle(route.id)} className="text-gray-400 hover:text-gray-600 transition-colors" title={route.isActive ? 'Deactivate' : 'Activate'}>
-                    {route.isActive ? <ToggleRight className="w-5 h-5 text-green-600" /> : <ToggleLeft className="w-5 h-5" />}
+                    {route.isActive ? <ToggleRight className="w-5 h-5 text-primary" /> : <ToggleLeft className="w-5 h-5" />}
                   </button>
                   <button
                     onClick={() => setEditingRouteId(isEditing ? null : route.id)}
-                    className={isEditing ? 'text-green-600 transition-colors' : 'text-gray-400 hover:text-gray-600 transition-colors'}
+                    className={isEditing ? 'text-primary transition-colors' : 'text-gray-400 hover:text-gray-600 transition-colors'}
                     title="Manage stops"
                   >
                     <Pencil className="w-4 h-4" />
@@ -305,14 +339,14 @@ export function AdminRoutesPage() {
                     const isEndpoint = rs.stopId === route.originStopId || rs.stopId === route.destinationStopId
                     return (
                       <div key={rs.id} className="flex items-center gap-3 text-sm pl-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary/100 flex-shrink-0" />
                         <span className="text-gray-700 flex-1">{rs.stop.name}</span>
                         {isEditing ? (
                           <EditableStopRow rs={rs} />
                         ) : (
                           <>
                             <span className="text-gray-400 text-xs">{rs.distanceFromOriginKm} km</span>
-                            <span className="text-green-600 font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
+                            <span className="text-primary font-semibold">{formatCurrency(rs.priceFromOrigin)}</span>
                           </>
                         )}
                         {isEditing && !isEndpoint && (

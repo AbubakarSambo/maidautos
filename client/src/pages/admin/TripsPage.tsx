@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { tripsApi } from '@/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Select } from '@/components/shared'
 import type { Trip, TripStatus } from '@/types'
 
 const STATUS_COLORS: Record<TripStatus, string> = {
@@ -38,20 +39,24 @@ export function AdminTripsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Trips</h1>
-        <button onClick={() => navigate('/admin/trips/new')} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 transition-colors">
+        <button onClick={() => navigate('/admin/trips/new')} className="flex items-center gap-2 bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-colors">
           <Plus className="w-4 h-4" /> New Trip
         </button>
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
-          <option value="">All statuses</option>
-          {(['SCHEDULED', 'BOARDING', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED'] as TripStatus[]).map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-2.5 bg-white border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+        <Select
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as TripStatus | '')}
+          placeholder="All statuses"
+          options={[
+            { value: '', label: 'All statuses' },
+            ...(['SCHEDULED', 'BOARDING', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED'] as TripStatus[]).map((s) => ({ value: s, label: s })),
+          ]}
+          className="px-3 py-2.5 bg-white border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary min-w-[10rem]"
+        />
       </div>
 
       {isLoading ? (
@@ -63,7 +68,7 @@ export function AdminTripsPage() {
           {trips.map((trip) => (
             <div
               key={trip.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-primary/40 hover:shadow-md transition-all"
               onClick={() => navigate(`/admin/trips/${trip.id}`)}
             >
               <div className="flex items-center gap-2 mb-2">

@@ -26,8 +26,8 @@ export function PaymentCallbackPage() {
   }, [reference])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white" style={{ backgroundColor: '#0b1c30' }}>
-      <div className="w-10 h-10 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white" style={{ backgroundColor: '#610000' }}>
+      <div className="w-10 h-10 border-2 border-[#ffb4a8] border-t-transparent rounded-full animate-spin" />
       <p className="text-white/70">Confirming your payment...</p>
     </div>
   )

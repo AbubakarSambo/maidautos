@@ -1,4 +1,6 @@
 export { SearchPage } from './search/SearchPage'
+export { TermsPage } from './legal/TermsPage'
+export { PrivacyPage } from './legal/PrivacyPage'
 export { TripDetailPage } from './booking/TripDetailPage'
 export { CheckoutPage } from './booking/CheckoutPage'
 export { ConfirmationPage } from './booking/ConfirmationPage'

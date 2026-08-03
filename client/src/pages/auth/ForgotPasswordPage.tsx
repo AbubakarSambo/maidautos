@@ -19,20 +19,20 @@ export function ForgotPasswordPage() {
   if (sent) return (
     <AuthShell>
       <div className="text-center">
-        <p className="font-bold text-gray-900 mb-2">Email sent</p>
+        <p className="font-bold text-on-surface mb-2">Email sent</p>
         <p className="text-gray-500 text-sm mb-4">If an account exists, a reset link has been sent.</p>
-        <Link to="/login" className="text-green-700 font-semibold text-sm hover:underline">Back to login</Link>
+        <Link to="/login" className="text-primary font-semibold text-sm hover:underline">Back to login</Link>
       </div>
     </AuthShell>
   )
 
   return (
     <AuthShell>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">Forgot password?</h2>
+      <h2 className="text-xl font-bold text-on-surface mb-2">Forgot password?</h2>
       <p className="text-gray-500 text-sm mb-6">Enter your email and we'll send you a reset link.</p>
       <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-4">
-        <input {...register('email')} type="email" required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="you@example.com" />
-        <button type="submit" disabled={isPending} className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-900/20">
+        <input {...register('email')} type="email" required className="w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="you@example.com" />
+        <button type="submit" disabled={isPending} className="w-full bg-primary hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl font-bold shadow-lg">
           {isPending ? 'Sending...' : 'Send reset link'}
         </button>
       </form>
@@ -53,19 +53,19 @@ export function ResetPasswordPage() {
   if (isSuccess) return (
     <AuthShell>
       <div className="text-center">
-        <p className="font-bold text-gray-900 mb-4">Password updated!</p>
-        <Link to="/login" className="inline-block bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-green-900/20">Sign in</Link>
+        <p className="font-bold text-on-surface mb-4">Password updated!</p>
+        <Link to="/login" className="inline-block bg-primary hover:brightness-110 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg">Sign in</Link>
       </div>
     </AuthShell>
   )
 
   return (
     <AuthShell>
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Set new password</h2>
+      <h2 className="text-xl font-bold text-on-surface mb-6">Set new password</h2>
       <form onSubmit={handleSubmit((d) => { if (d.password !== d.confirm) { toast.error('Passwords do not match'); return } mutate(d) })} className="space-y-4">
-        <input {...register('password')} type="password" required minLength={8} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="New password (min 8 chars)" />
-        <input {...register('confirm')} type="password" required className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" placeholder="Confirm password" />
-        <button type="submit" disabled={isPending} className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-900/20">
+        <input {...register('password')} type="password" required minLength={8} className="w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="New password (min 8 chars)" />
+        <input {...register('confirm')} type="password" required className="w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Confirm password" />
+        <button type="submit" disabled={isPending} className="w-full bg-primary hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl font-bold shadow-lg">
           {isPending ? 'Updating...' : 'Update password'}
         </button>
       </form>

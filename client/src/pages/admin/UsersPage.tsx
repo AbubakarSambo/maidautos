@@ -29,7 +29,7 @@ export function AdminUsersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Team</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 transition-colors">
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-colors">
           <Plus className="w-4 h-4" /> Add Admin
         </button>
       </div>
@@ -38,15 +38,15 @@ export function AdminUsersPage() {
         <form onSubmit={handleSubmit((d) => create({ ...d, role: 'ADMIN' }))} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
           <h3 className="font-bold text-gray-900">Add City Admin</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">First Name</label><input {...register('firstName', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Last Name</label><input {...register('lastName', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label><input {...register('email', { required: true })} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone</label><input {...register('phone')} className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">City</label><input {...register('adminCity')} placeholder="Abuja" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Password</label><input {...register('password', { required: true, minLength: 8 })} type="password" className="mt-1.5 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">First Name</label><input {...register('firstName', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Last Name</label><input {...register('lastName', { required: true })} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label><input {...register('email', { required: true })} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone</label><input {...register('phone')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">City</label><input {...register('adminCity')} placeholder="Abuja" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Password</label><input {...register('password', { required: true, minLength: 8 })} type="password" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
           </div>
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 disabled:opacity-50 transition-colors">Create Admin</button>
+            <button type="submit" disabled={isPending} className="bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg disabled:opacity-50 transition-colors">Create Admin</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">Cancel</button>
           </div>
         </form>
@@ -55,7 +55,7 @@ export function AdminUsersPage() {
       <div className="space-y-2">
         {isLoading ? <div className="py-8 text-center text-gray-500">Loading...</div> : users.map((user: any) => (
           <div key={user.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 ${!user.isActive ? 'opacity-50' : ''}`}>
-            <div className="w-10 h-10 bg-green-600/10 rounded-full flex items-center justify-center text-green-700 font-semibold text-sm">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-semibold text-sm">
               {user.firstName[0]}{user.lastName[0]}
             </div>
             <div className="flex-1">

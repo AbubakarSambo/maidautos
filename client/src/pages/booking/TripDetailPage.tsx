@@ -46,7 +46,7 @@ export function TripDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-slate-900 px-4 py-4 flex items-center gap-3">
+      <div className="bg-primary-dark px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -57,7 +57,7 @@ export function TripDetailPage() {
         {/* Trip summary */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-4 h-4 text-green-600" />
+            <MapPin className="w-4 h-4 text-primary" />
             <span className="font-bold text-gray-900">{pickupStop?.stop.name || trip.route.originStop.name}</span>
             <ArrowRight className="w-4 h-4 text-gray-400" />
             <span className="font-bold text-gray-900">{dropoffStop?.stop.name || trip.route.destinationStop.name}</span>
@@ -65,7 +65,7 @@ export function TripDetailPage() {
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Departure</p><p className="font-semibold text-gray-900 mt-0.5">{formatDateTime(trip.departureDateTime)}</p></div>
             <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Duration</p><p className="font-semibold text-gray-900 mt-0.5">{formatDuration(trip.route.estimatedDurationMinutes)}</p></div>
-            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Price</p><p className="font-semibold text-green-600 mt-0.5">{formatCurrency(price)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Price</p><p className="font-semibold text-primary mt-0.5">{formatCurrency(price)}</p></div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
             <Bus className="w-4 h-4" />
@@ -89,7 +89,7 @@ export function TripDetailPage() {
         <button
           disabled={!selectedSeat}
           onClick={handleContinue}
-          className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-green-900/20"
+          className="w-full bg-primary hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg"
         >
           {selectedSeat ? `Continue — Seat ${selectedSeat} · ${formatCurrency(price)}` : 'Select a seat to continue'}
         </button>

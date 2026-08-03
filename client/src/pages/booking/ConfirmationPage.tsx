@@ -29,7 +29,7 @@ export function ConfirmationPage() {
         {/* Success badge */}
         <div className="text-center">
           <div className="w-16 h-16 bg-green-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
-            <CheckCircle className="w-9 h-9 text-green-600" />
+            <CheckCircle className="w-9 h-9 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Booking Confirmed!</h1>
           <p className="text-gray-500 mt-1">Your ticket has been issued</p>
@@ -38,13 +38,13 @@ export function ConfirmationPage() {
         {/* Ticket card */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Header strip */}
-          <div className="px-5 py-4" style={{ backgroundColor: '#0b1c30' }}>
+          <div className="px-5 py-4" style={{ backgroundColor: '#610000' }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
-                <Bus className="w-5 h-5 text-green-300" />
+                <Bus className="w-5 h-5 text-[#ffb4a8]" />
                 <span className="font-bold text-lg">MaidAutos</span>
               </div>
-              <span className="text-green-300 text-sm font-mono">{booking.ticketCode}</span>
+              <span className="text-[#ffb4a8] text-sm font-mono">{booking.ticketCode}</span>
             </div>
           </div>
 
@@ -71,7 +71,7 @@ export function ConfirmationPage() {
             </div>
             <div>
               <p className="text-xs text-gray-400">Seat</p>
-              <p className="font-bold text-2xl text-green-600">{booking.seatNumber}</p>
+              <p className="font-bold text-2xl text-primary">{booking.seatNumber}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400">Vehicle</p>
@@ -97,7 +97,7 @@ export function ConfirmationPage() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-green-900/10"
+            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm shadow-lg"
           >
             <Share2 className="w-4 h-4" /> Share via WhatsApp
           </a>

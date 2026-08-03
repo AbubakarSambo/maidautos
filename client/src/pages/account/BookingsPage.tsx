@@ -19,7 +19,7 @@ export function MyBookingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-slate-900 px-4 py-5">
+      <div className="bg-primary-dark px-4 py-5">
         <h1 className="max-w-lg mx-auto text-xl font-bold text-white">My Trips</h1>
       </div>
 
@@ -50,7 +50,7 @@ export function MyBookingsPage() {
           <div className="text-center py-16">
             <Bus className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">No trips yet</p>
-            <button onClick={() => navigate('/')} className="mt-4 bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/20">Book a ride</button>
+            <button onClick={() => navigate('/')} className="mt-4 bg-primary hover:brightness-110 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg">Book a ride</button>
           </div>
         )}
       </div>
@@ -60,7 +60,7 @@ export function MyBookingsPage() {
 
 function BookingCard({ booking, onClick, faded }: { booking: Booking; onClick: () => void; faded?: boolean }) {
   return (
-    <div onClick={onClick} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-green-300 hover:shadow-md transition-all ${faded ? 'opacity-60' : ''}`}>
+    <div onClick={onClick} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer hover:border-primary/40 hover:shadow-md transition-all ${faded ? 'opacity-60' : ''}`}>
       <div className="flex items-center gap-2 mb-2">
         <span className="font-bold text-gray-900">{booking.pickupStop.stop.name}</span>
         <ArrowRight className="w-4 h-4 text-gray-400" />

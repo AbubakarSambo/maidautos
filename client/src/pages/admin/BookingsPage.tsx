@@ -42,7 +42,7 @@ export function AdminBookingsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Bookings</h1>
-        <button onClick={() => navigate('/admin/bookings/new')} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 transition-colors">
+        <button onClick={() => navigate('/admin/bookings/new')} className="flex items-center gap-2 bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-colors">
           <Plus className="w-4 h-4" /> New Booking
         </button>
       </div>
@@ -54,13 +54,13 @@ export function AdminBookingsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, phone, or ticket code..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
         <button
           onClick={() => setUnpaidCashOnly((v) => !v)}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors whitespace-nowrap ${
-            unpaidCashOnly ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            unpaidCashOnly ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-outline-variant text-gray-600 hover:bg-gray-50'
           }`}
         >
           Unpaid Cash
@@ -107,7 +107,7 @@ export function AdminBookingsPage() {
                     {b.paymentStatus === 'PENDING' && b.paymentMethod === 'CASH' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); recordPayment(b.id) }}
-                        className="flex items-center gap-1 text-xs text-green-700 font-semibold hover:underline"
+                        className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Mark Paid
                       </button>

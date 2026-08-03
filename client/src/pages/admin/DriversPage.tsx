@@ -33,7 +33,7 @@ export function AdminDriversPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Drivers</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 transition-colors">
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-colors">
           <Plus className="w-4 h-4" /> Add Driver
         </button>
       </div>
@@ -42,16 +42,16 @@ export function AdminDriversPage() {
         <form onSubmit={handleSubmit((d) => create(d))} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
           <h3 className="font-bold text-gray-900">Add Driver</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-500">First Name</label><input {...register('firstName', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs text-gray-500">Last Name</label><input {...register('lastName', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs text-gray-500">Phone</label><input {...register('phone', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs text-gray-500">License Number</label><input {...register('licenseNumber', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs text-gray-500">License Expiry</label><input {...register('licenseExpiry', { required: true })} type="date" className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
-            <div><label className="text-xs text-gray-500">NIN (optional)</label><input {...register('nin')} className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">First Name</label><input {...register('firstName', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">Last Name</label><input {...register('lastName', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">Phone</label><input {...register('phone', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">License Number</label><input {...register('licenseNumber', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">License Expiry</label><input {...register('licenseExpiry', { required: true })} type="date" className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
+            <div><label className="text-xs text-gray-500">NIN (optional)</label><input {...register('nin')} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
           </div>
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-900/10 disabled:opacity-50 transition-colors">Save</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="submit" disabled={isPending} className="bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg disabled:opacity-50 transition-colors">Save</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-outline-variant hover:bg-gray-50 transition-colors">Cancel</button>
           </div>
         </form>
       )}

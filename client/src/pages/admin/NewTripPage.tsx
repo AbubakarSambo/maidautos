@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { ArrowLeft } from 'lucide-react'
 import { routesApi, carsApi, driversApi, tripsApi } from '@/api'
 import { formatDuration } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Select } from '@/components/shared'
 import type { Route, Car, Driver } from '@/types'
 
 const DAYS = [
@@ -48,7 +49,7 @@ export function AdminNewTripPage() {
     queryFn: driversApi.findAvailable,
   })
 
-  const { register, handleSubmit, watch, setError, clearErrors, formState: { errors } } = useForm<Form>()
+  const { register, control, handleSubmit, watch, setError, clearErrors, formState: { errors } } = useForm<Form>()
 
   const selectedRouteId = watch('routeId')
   const selectedCarId = watch('carId')
@@ -154,20 +155,24 @@ export function AdminNewTripPage() {
 
           <div>
             <label className="text-sm font-medium text-gray-700">Route *</label>
-            <select
-              {...register('routeId')}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
-            >
-              <option value="">Select a route</option>
-              {routes
-                .filter((r) => r.isActive)
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.originStop.name} → {r.destinationStop.name}
-                    {r.estimatedDurationMinutes ? ` (${formatDuration(r.estimatedDurationMinutes)})` : ''}
-                  </option>
-                ))}
-            </select>
+            <Controller
+              name="routeId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Select a route"
+                  options={routes
+                    .filter((r) => r.isActive)
+                    .map((r) => ({
+                      value: r.id,
+                      label: `${r.originStop.name} → ${r.destinationStop.name}${r.estimatedDurationMinutes ? ` (${formatDuration(r.estimatedDurationMinutes)})` : ''}`,
+                    }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              )}
+            />
             {errors.routeId && <p className="text-red-500 text-xs mt-1">{errors.routeId.message}</p>}
           </div>
 
@@ -177,7 +182,7 @@ export function AdminNewTripPage() {
               <div className="space-y-1">
                 {selectedRoute.routeStops.map((rs) => (
                   <div key={rs.id} className="flex items-center gap-2 text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/100" />
                     <span>{rs.stop.name}</span>
                     <span className="ml-auto text-gray-400">
                       ₦{Number(rs.priceFromOrigin).toLocaleString()}
@@ -195,7 +200,7 @@ export function AdminNewTripPage() {
                 {...register('departureDateTime')}
                 type="datetime-local"
                 min={minDateTime}
-                className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               {errors.departureDateTime && (
                 <p className="text-red-500 text-xs mt-1">{errors.departureDateTime.message}</p>
@@ -210,7 +215,7 @@ export function AdminNewTripPage() {
                     {...register('startDate')}
                     type="date"
                     min={minDate}
-                    className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate.message}</p>}
                 </div>
@@ -220,7 +225,7 @@ export function AdminNewTripPage() {
                     {...register('endDate')}
                     type="date"
                     min={minDate}
-                    className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate.message}</p>}
                 </div>
@@ -236,8 +241,8 @@ export function AdminNewTripPage() {
                       onClick={() => toggleDay(d.value)}
                       className={`w-11 py-2 rounded-xl text-xs font-semibold border transition-colors ${
                         daysOfWeek.includes(d.value)
-                          ? 'bg-green-600 text-white border-green-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-gray-600 border-outline-variant hover:border-gray-300'
                       }`}
                     >
                       {d.label}
@@ -251,7 +256,7 @@ export function AdminNewTripPage() {
                 <input
                   {...register('departureTime')}
                   type="time"
-                  className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                  className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 {errors.departureTime && <p className="text-red-500 text-xs mt-1">{errors.departureTime.message}</p>}
               </div>
@@ -270,7 +275,7 @@ export function AdminNewTripPage() {
                 min={0}
                 step={100}
                 placeholder="e.g. 15000"
-                className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                className="w-full pl-7 pr-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -287,18 +292,22 @@ export function AdminNewTripPage() {
 
           <div>
             <label className="text-sm font-medium text-gray-700">Car *</label>
-            <select
-              {...register('carId')}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
-            >
-              <option value="">Select a car</option>
-              {cars.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.make} {c.model} — {c.plateNumber} ({c.capacity} seats · {c.type}
-                  {c.hasAC ? ' · AC' : ''})
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="carId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Select a car"
+                  options={cars.map((c) => ({
+                    value: c.id,
+                    label: `${c.make} ${c.model} — ${c.plateNumber} (${c.capacity} seats · ${c.type}${c.hasAC ? ' · AC' : ''})`,
+                  }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              )}
+            />
             {errors.carId && <p className="text-red-500 text-xs mt-1">{errors.carId.message}</p>}
             {cars.length === 0 && (
               <p className="text-amber-600 text-xs mt-1">No active cars — add one in Fleet first.</p>
@@ -314,17 +323,19 @@ export function AdminNewTripPage() {
 
           <div>
             <label className="text-sm font-medium text-gray-700">Driver *</label>
-            <select
-              {...register('driverId')}
-              className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
-            >
-              <option value="">Select a driver</option>
-              {drivers.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.firstName} {d.lastName} — {d.phone}
-                </option>
-              ))}
-            </select>
+            <Controller
+              name="driverId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Select a driver"
+                  options={drivers.map((d) => ({ value: d.id, label: `${d.firstName} ${d.lastName} — ${d.phone}` }))}
+                  className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              )}
+            />
             {errors.driverId && <p className="text-red-500 text-xs mt-1">{errors.driverId.message}</p>}
             {drivers.length === 0 && (
               <p className="text-amber-600 text-xs mt-1">No available drivers — check driver statuses.</p>
@@ -341,7 +352,7 @@ export function AdminNewTripPage() {
             {...register('notes')}
             rows={2}
             placeholder="Any internal notes about this trip..."
-            className="mt-1 w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
+            className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
           />
         </div>
 
@@ -349,7 +360,7 @@ export function AdminNewTripPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-green-900/10"
+            className="flex-1 bg-primary hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors shadow-lg"
           >
             {isPending ? 'Creating...' : mode === 'single' ? 'Create Trip' : 'Create Trips'}
           </button>

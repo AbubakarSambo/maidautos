@@ -11,7 +11,7 @@ export function AdminDashboardPage() {
   })
 
   const stats = [
-    { label: "Today's Trips", value: data?.today.trips ?? '—', icon: Bus, color: 'text-green-600 bg-green-50' },
+    { label: "Today's Trips", value: data?.today.trips ?? '—', icon: Bus, color: 'text-primary bg-primary/10' },
     { label: "Today's Bookings", value: data?.today.bookings ?? '—', icon: BookOpen, color: 'text-blue-600 bg-blue-50' },
     { label: "Today's Revenue", value: data ? formatCurrency(data.today.revenue) : '—', icon: TrendingUp, color: 'text-purple-600 bg-purple-50' },
     { label: 'Pending Payments', value: data?.allTime.pendingPayments ?? '—', icon: Clock, color: 'text-amber-600 bg-amber-50' },
@@ -43,7 +43,7 @@ export function AdminDashboardPage() {
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">All-time Revenue</p>
-          <p className="text-3xl font-bold text-green-600">{isLoading ? '...' : data ? formatCurrency(data.allTime.revenue) : '—'}</p>
+          <p className="text-3xl font-bold text-primary">{isLoading ? '...' : data ? formatCurrency(data.allTime.revenue) : '—'}</p>
         </div>
       </div>
     </div>
