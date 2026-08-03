@@ -12,6 +12,7 @@ interface Props {
 
 export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelectSeat, readOnly }: Props) {
   const layout = getSeatLayout(carType, capacity)
+  const hasInlineDriver = layout.rows.some((row) => row.includes('driver'))
 
   return (
     <div className="select-none">
@@ -22,11 +23,15 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-gray-400" /> Taken</div>
       </div>
 
-      {/* Front label */}
-      <div className="text-center text-xs text-gray-400 mb-2 font-medium tracking-wider uppercase">Driver</div>
-      <div className="flex justify-center mb-1">
-        <div className="w-8 h-8 rounded-t-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">🚗</div>
-      </div>
+      {/* Front label — only shown when the driver isn't already placed inline in the grid */}
+      {!hasInlineDriver && (
+        <>
+          <div className="text-center text-xs text-gray-400 mb-2 font-medium tracking-wider uppercase">Driver</div>
+          <div className="flex justify-center mb-1">
+            <div className="w-8 h-8 rounded-t-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">🚗</div>
+          </div>
+        </>
+      )}
 
       <div className="space-y-1.5">
         {layout.rows.map((row, rowIdx) => (
@@ -34,6 +39,18 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
             {row.map((seat, colIdx) => {
               if (seat === null) {
                 return <div key={colIdx} className="w-5" />
+              }
+
+              if (seat === 'driver') {
+                return (
+                  <div
+                    key={colIdx}
+                    title="Driver"
+                    className="w-8 h-8 rounded flex items-center justify-center text-xs bg-gray-200 text-gray-500 border border-gray-300"
+                  >
+                    🚗
+                  </div>
+                )
               }
 
               const isTaken = takenSeats.includes(seat)

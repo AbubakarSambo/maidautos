@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   MapPin, Navigation, Calendar, Users, Search, Bus, Clock, ArrowRight, Menu, X,
-  ShieldCheck, Armchair, Star, Banknote, Ticket, BadgeCheck,
+  ShieldCheck, Armchair, Star, Banknote, Ticket, BadgeCheck, Wifi, UtensilsCrossed,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
@@ -30,6 +30,16 @@ const FEATURES = [
     icon: <Banknote className="w-7 h-7" />,
     title: 'Fair Economics',
     desc: 'Competitive, transparent pricing with loyalty rewards for frequent travelers. No peak-period surcharges for app users.',
+  },
+  {
+    icon: <Wifi className="w-7 h-7" />,
+    title: 'Free Onboard Wi-Fi',
+    desc: 'Stay connected the whole journey — every vehicle comes with complimentary Wi-Fi at no extra cost.',
+  },
+  {
+    icon: <UtensilsCrossed className="w-7 h-7" />,
+    title: 'Free Meals & Snacks',
+    desc: 'Sit back and relax — complimentary food and refreshments are included with every trip, no matter the distance.',
   },
 ]
 
@@ -326,6 +336,10 @@ export function SearchPage() {
                           {trip.car.make} {trip.car.model}
                         </span>
                       </div>
+                      <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
+                        <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>
+                        <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>
+                      </div>
                       <div className="mt-3 flex items-center justify-between">
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                           trip.status === 'BOARDING'
@@ -382,7 +396,7 @@ export function SearchPage() {
           </div>
           <p className="text-on-surface-variant max-w-sm">We combine modern technology with operational excellence to ensure every mile of your journey is exceptional.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((item) => (
             <div key={item.title} className="p-8 bg-surface-rose-alt border border-outline-variant rounded-2xl group hover:border-primary hover:shadow-xl transition-all duration-300">
               <div className="w-14 h-14 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-on-primary transition-colors">

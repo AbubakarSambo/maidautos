@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bus, MapPin, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Bus, MapPin, ArrowRight, Wifi, UtensilsCrossed } from 'lucide-react'
 import { tripsApi } from '@/api'
 import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
@@ -73,6 +73,10 @@ export function TripDetailPage() {
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
             <Bus className="w-4 h-4" />
             <span>{trip.car.make} {trip.car.model} · {trip.car.hasAC ? 'AC' : 'No AC'} · {trip.car.type}</span>
+          </div>
+          <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
+            <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>
+            <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>
           </div>
         </div>
 

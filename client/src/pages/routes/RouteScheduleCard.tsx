@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, Clock, Bus, Calendar } from 'lucide-react'
+import { ArrowRight, Clock, Bus, Calendar, Wifi, UtensilsCrossed } from 'lucide-react'
 import { tripsApi } from '@/api'
 import { cn, formatCurrency, formatDuration } from '@/lib/utils'
 import type { Route, Trip } from '@/types'
@@ -93,6 +93,10 @@ export function RouteScheduleCard({ route }: { route: Route }) {
                     <span className="flex items-center gap-1.5 text-xs text-on-surface-variant">
                       <Bus className="w-3.5 h-3.5" />
                       {trip.car.make} {trip.car.model}
+                    </span>
+                    <span className="hidden sm:flex items-center gap-2 text-primary/80" title="Free Wi-Fi & meals onboard">
+                      <Wifi className="w-3.5 h-3.5" />
+                      <UtensilsCrossed className="w-3.5 h-3.5" />
                     </span>
                   </div>
                   <div className="flex items-center gap-3">

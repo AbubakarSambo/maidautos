@@ -140,5 +140,5 @@ export interface SeatAvailability {
 
 // Seat layout config per car type
 export interface SeatLayout {
-  rows: Array<Array<number | null>> // null = aisle
+  rows: Array<Array<number | null | 'driver'>> // null = aisle, 'driver' = non-bookable driver seat
 }
