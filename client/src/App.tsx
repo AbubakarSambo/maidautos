@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout'
 import { ProtectedRoute, GuestRoute } from '@/components/shared'
 import {
   SearchPage,
+  RoutesPage,
   TermsPage,
   PrivacyPage,
   TripDetailPage,
@@ -47,6 +48,7 @@ function App() {
         <Routes>
           {/* Public passenger-facing */}
           <Route path="/" element={<SearchPage />} />
+          <Route path="/routes" element={<RoutesPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/trips/:id" element={<TripDetailPage />} />

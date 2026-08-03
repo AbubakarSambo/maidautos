@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-export function LegalPageLayout({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
+interface PageShellProps {
+  title: string
+  updated?: string
+  contentClassName?: string
+  proseStyles?: boolean
+  children: ReactNode
+}
+
+export function PageShell({ title, updated, contentClassName, proseStyles = true, children }: PageShellProps) {
   return (
     <div className="min-h-screen bg-background font-sans text-on-surface">
       <header className="sticky top-0 z-50 bg-surface shadow-sm">
@@ -17,12 +26,17 @@ export function LegalPageLayout({ title, updated, children }: { title: string; u
         </nav>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-16">
+      <main className={cn('max-w-3xl mx-auto px-6 py-16', contentClassName)}>
         <p className="text-primary uppercase tracking-[0.2em] text-xs font-bold mb-3">MaidAutos</p>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold text-on-surface mb-2">{title}</h1>
-        <p className="text-on-surface-variant text-sm mb-12">Last updated: {updated}</p>
+        {updated && <p className="text-on-surface-variant text-sm mb-12">Last updated: {updated}</p>}
 
-        <div className="space-y-10 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-on-surface [&_h2]:mb-3 [&_p]:text-on-surface-variant [&_p]:leading-relaxed [&_li]:text-on-surface-variant [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5">
+        <div
+          className={cn(
+            'space-y-10',
+            proseStyles && '[&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-on-surface [&_h2]:mb-3 [&_p]:text-on-surface-variant [&_p]:leading-relaxed [&_li]:text-on-surface-variant [&_li]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5'
+          )}
+        >
           {children}
         </div>
       </main>

@@ -1,8 +1,8 @@
-import { LegalPageLayout } from './LegalPageLayout'
+import { PageShell } from './PageShell'
 
 export function PrivacyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" updated="3 August 2026">
+    <PageShell title="Privacy Policy" updated="3 August 2026">
       <section>
         <h2>1. Introduction</h2>
         <p>
@@ -109,6 +109,6 @@ export function PrivacyPage() {
           or by phone on 0912 222 2656 / 0912 222 2856.
         </p>
       </section>
-    </LegalPageLayout>
+    </PageShell>
   )
 }
