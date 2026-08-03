@@ -128,7 +128,7 @@ export function SearchPage() {
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#how-it-works" className="text-sm font-bold text-primary border-b-2 border-primary pb-1">How It Works</a>
-            <a href="#search" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Routes</a>
+            <Link to="/routes" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Routes</Link>
             <a href="#why-us" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Why Us</a>
             <div className="h-6 w-px bg-outline-variant" />
             <button
@@ -157,7 +157,7 @@ export function SearchPage() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-outline-variant px-6 py-4 flex flex-col gap-4 bg-surface">
             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold text-primary">How It Works</a>
-            <a href="#search" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Routes</a>
+            <Link to="/routes" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Routes</Link>
             <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Why Us</a>
             <div className="h-px w-full bg-outline-variant" />
             <button
@@ -452,12 +452,12 @@ export function SearchPage() {
                 <Ticket className="w-5 h-5" />
                 Book Your Trip Now
               </button>
-              <a
-                href="#search"
+              <Link
+                to="/routes"
                 className="w-full sm:w-auto bg-surface border-2 border-primary text-primary px-8 py-5 rounded-xl font-bold text-lg hover:bg-surface-rose transition-all text-center"
               >
                 View Routes
-              </a>
+              </Link>
             </div>
           </div>
           <div className="flex-1 w-full">
@@ -486,6 +486,7 @@ export function SearchPage() {
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8" style={{ color: '#ffb4a8' }}>Company</h4>
             <ul className="space-y-5">
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="#how-it-works">How It Works</a></li>
+              <li><Link className="text-sm text-white/60 hover:text-white transition-colors" to="/routes">Routes</Link></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="#why-us">Why MaidAutos</a></li>
             </ul>
           </div>

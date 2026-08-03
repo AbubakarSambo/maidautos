@@ -1,4 +1,5 @@
 export { SearchPage } from './search/SearchPage'
+export { RoutesPage } from './routes/RoutesPage'
 export { TermsPage } from './legal/TermsPage'
 export { PrivacyPage } from './legal/PrivacyPage'
 export { TripDetailPage } from './booking/TripDetailPage'

@@ -1,12 +1,12 @@
-import { LegalPageLayout } from './LegalPageLayout'
+import { PageShell } from './PageShell'
 
 export function TermsPage() {
   return (
-    <LegalPageLayout title="Terms &amp; Conditions" updated="3 August 2026">
+    <PageShell title="Terms & Conditions" updated="3 August 2026">
       <section>
         <h2>1. Introduction</h2>
         <p>
-          These Terms &amp; Conditions ("Terms") govern your use of the MaidAutos website, mobile experience,
+          These Terms & Conditions ("Terms") govern your use of the MaidAutos website, mobile experience,
           and booking services (together, the "Service"), operated by Maid Autos Limited ("MaidAutos", "we",
           "us"). By creating an account, searching for trips, or booking a ticket, you agree to these Terms.
           If you do not agree, please do not use the Service.
@@ -108,6 +108,6 @@ export function TermsPage() {
           or by phone on 0912 222 2656 / 0912 222 2856.
         </p>
       </section>
-    </LegalPageLayout>
+    </PageShell>
   )
 }
