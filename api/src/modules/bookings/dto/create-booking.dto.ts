@@ -40,6 +40,17 @@ export class CreateBookingDto {
   @IsString()
   guestPhone?: string;
 
+  // Next of kin — collected for all passengers as a safety contact
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nokName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nokPhone?: string;
+
   // Admin booking on behalf of a passenger
   @ApiPropertyOptional()
   @IsOptional()

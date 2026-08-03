@@ -5,6 +5,7 @@ import { ArrowLeft, Bus, MapPin, ArrowRight } from 'lucide-react'
 import { tripsApi } from '@/api'
 import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
+import { BookingSteps } from '@/components/shared'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
 
 export function TripDetailPage() {
@@ -52,6 +53,8 @@ export function TripDetailPage() {
         </button>
         <span className="font-bold text-white">Select Your Seat</span>
       </div>
+
+      <BookingSteps current={0} />
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
         {/* Trip summary */}

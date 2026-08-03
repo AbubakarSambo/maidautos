@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft, CreditCard } from 'lucide-react'
 import { bookingsApi, paystackApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import { BookingSteps } from '@/components/shared'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -11,6 +12,8 @@ type GuestForm = {
   guestName: string
   guestEmail: string
   guestPhone: string
+  nokName: string
+  nokPhone: string
 }
 
 export function CheckoutPage() {
@@ -27,14 +30,16 @@ export function CheckoutPage() {
   const { register, handleSubmit, setError, formState: { errors } } = useForm<GuestForm>()
 
   const { mutate: createBooking, isPending } = useMutation({
-    mutationFn: (guestData?: GuestForm) =>
+    mutationFn: (data: GuestForm) =>
       bookingsApi.create({
         tripId,
         seatNumber,
         pickupStopId,
         dropoffStopId,
         paymentMethod: 'PAYSTACK',
-        ...(!isAuthenticated && guestData ? guestData : {}),
+        nokName: data.nokName,
+        nokPhone: data.nokPhone,
+        ...(!isAuthenticated ? { guestName: data.guestName, guestEmail: data.guestEmail, guestPhone: data.guestPhone } : {}),
       }),
     onSuccess: async (booking) => {
       try {
@@ -65,7 +70,13 @@ export function CheckoutPage() {
         return setError('guestEmail', { message: 'Valid email required' })
       }
     }
-    createBooking(isAuthenticated ? undefined : data)
+    if (!data.nokName || data.nokName.trim().length < 2) {
+      return setError('nokName', { message: 'Next of kin name required' })
+    }
+    if (!data.nokPhone || data.nokPhone.trim().length < 10) {
+      return setError('nokPhone', { message: 'Valid next of kin phone required' })
+    }
+    createBooking(data)
   }
 
   return (
@@ -76,6 +87,8 @@ export function CheckoutPage() {
         </button>
         <span className="font-bold text-white">Checkout</span>
       </div>
+
+      <BookingSteps current={1} />
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
         {/* Order summary */}
@@ -110,6 +123,24 @@ export function CheckoutPage() {
             </div>
           </div>
         )}
+
+        {/* Next of kin — safety contact, collected for every passenger */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Next of Kin</p>
+          <p className="text-xs text-gray-400 mb-3">A contact we can reach in case of an emergency during your trip.</p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Full name *</label>
+              <input {...register('nokName')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Next of kin's full name" />
+              {errors.nokName && <p className="text-red-500 text-xs mt-1">{errors.nokName.message}</p>}
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone *</label>
+              <input {...register('nokPhone')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="08012345678" />
+              {errors.nokPhone && <p className="text-red-500 text-xs mt-1">{errors.nokPhone.message}</p>}
+            </div>
+          </div>
+        </div>
 
         {/* Payment method */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

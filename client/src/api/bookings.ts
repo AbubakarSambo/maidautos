@@ -22,6 +22,8 @@ export const bookingsApi = {
     guestName?: string
     guestEmail?: string
     guestPhone?: string
+    nokName?: string
+    nokPhone?: string
     passengerUserId?: string
   }) => apiClient.post('/bookings', data).then((r) => r.data.data),
 

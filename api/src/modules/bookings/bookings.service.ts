@@ -190,6 +190,8 @@ export class BookingsService {
         guestName,
         guestEmail,
         guestPhone,
+        nokName: dto.nokName,
+        nokPhone: dto.nokPhone,
         seatNumber: dto.seatNumber,
         pickupStopId: dto.pickupStopId,
         dropoffStopId: dto.dropoffStopId,

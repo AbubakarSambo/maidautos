@@ -111,6 +111,8 @@ export interface Booking {
   guestName: string | null
   guestEmail: string | null
   guestPhone: string | null
+  nokName: string | null
+  nokPhone: string | null
   seatNumber: number
   pickupStopId: string
   dropoffStopId: string

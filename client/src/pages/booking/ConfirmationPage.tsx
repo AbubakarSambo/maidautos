@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle, Share2, ArrowRight, Bus } from 'lucide-react'
 import { bookingsApi } from '@/api'
+import { BookingSteps } from '@/components/shared'
 import { formatDateTime, formatCurrency, getWhatsAppShareUrl } from '@/lib/utils'
 import type { Booking } from '@/types'
 
@@ -24,7 +25,9 @@ export function ConfirmationPage() {
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <BookingSteps current={2} />
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-sm w-full space-y-4">
         {/* Success badge */}
         <div className="text-center">
@@ -109,6 +112,7 @@ export function ConfirmationPage() {
         >
           Back to home
         </button>
+      </div>
       </div>
     </div>
   )

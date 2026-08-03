@@ -252,6 +252,8 @@ model Booking {
   guestName          String?       @map("guest_name")
   guestEmail         String?       @map("guest_email")
   guestPhone         String?       @map("guest_phone")
+  nokName            String?       @map("nok_name")
+  nokPhone           String?       @map("nok_phone")
   seatNumber         Int           @map("seat_number")
   pickupStopId       String        @map("pickup_stop_id")
   dropoffStopId      String        @map("dropoff_stop_id")
