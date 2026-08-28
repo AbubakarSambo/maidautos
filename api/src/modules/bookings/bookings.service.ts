@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ConflictException,
@@ -16,6 +17,8 @@ const PENDING_PAYMENT_HOLD_MINUTES = 15;
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
@@ -237,7 +240,9 @@ export class BookingsService {
     // payment is actually confirmed (recordCashPayment / confirmPaystackPayment).
     if (paymentStatus === 'PAID') {
       for (const booking of bookings) {
-        this.sendTicketConfirmationEmail(booking).catch(() => {});
+        this.sendTicketConfirmationEmail(booking).catch((err) => {
+          this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
+        });
       }
     }
 
@@ -282,7 +287,9 @@ export class BookingsService {
     const email = booking.user?.email || booking.guestEmail;
     const firstName = booking.user?.firstName || booking.guestName || 'Passenger';
     if (email) {
-      this.emailService.sendBookingCancellationEmail(email, firstName, booking.ticketCode).catch(() => {});
+      this.emailService.sendBookingCancellationEmail(email, firstName, booking.ticketCode).catch((err) => {
+        this.logger.error(`Failed to send cancellation email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
+      });
     }
 
     return updated;
@@ -298,7 +305,9 @@ export class BookingsService {
       data: { paymentStatus: 'PAID' },
     });
 
-    this.sendTicketConfirmationEmail(booking).catch(() => {});
+    this.sendTicketConfirmationEmail(booking).catch((err) => {
+      this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
+    });
 
     return updated;
   }
@@ -328,7 +337,9 @@ export class BookingsService {
 
     if (!alreadyPaid) {
       for (const booking of bookings) {
-        this.sendTicketConfirmationEmail(booking).catch(() => {});
+        this.sendTicketConfirmationEmail(booking).catch((err) => {
+          this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
+        });
       }
     }
 
@@ -342,7 +353,7 @@ export class BookingsService {
     guestName?: string | null;
     guestEmail?: string | null;
     user?: { firstName: string; email: string } | null;
-    trip: { departureDateTime: Date };
+    trip: { departureDateTime: Date; car: { plateNumber: string } };
     pickupStop: { stop: { name: string } };
     dropoffStop: { stop: { name: string } };
   }) {
@@ -355,6 +366,7 @@ export class BookingsService {
       to: booking.dropoffStop.stop.name,
       departure: booking.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }),
       seatNumber: booking.seatNumber,
+      vehicleNo: booking.trip.car.plateNumber,
       amount: Number(booking.amount).toLocaleString('en-NG'),
     });
   }

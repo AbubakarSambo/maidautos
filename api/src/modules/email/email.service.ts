@@ -60,25 +60,60 @@ export class EmailService {
       departure: string;
       seatNumber: number;
       amount: string;
+      vehicleNo: string;
     },
     pdfBuffer?: Buffer,
   ) {
+    const maroon = '#610000';
+    const logoUrl = `${this.frontendUrl}/logo.png`;
+
+    const field = (label: string, value: string) => `
+      <tr>
+        <td style="padding:9px 0;border-bottom:1px solid #e5e7eb;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.03em;white-space:nowrap">${label}</td>
+        <td style="padding:9px 0;border-bottom:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#111827;text-align:right">${value}</td>
+      </tr>
+    `;
+
     await this.resend.emails.send({
       from: this.fromEmail,
       to: email,
       subject: `Your MaidAutos Ticket — ${ticketCode}`,
       html: `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-          <h2>Booking Confirmed!</h2>
-          <p>Hi ${firstName}, your ticket is confirmed. Details below:</p>
-          <table style="width:100%;border-collapse:collapse;margin:16px 0">
-            <tr><td style="padding:8px;color:#6b7280">Ticket Code</td><td style="padding:8px;font-weight:bold">${ticketCode}</td></tr>
-            <tr><td style="padding:8px;color:#6b7280">Route</td><td style="padding:8px">${ticketDetails.from} → ${ticketDetails.to}</td></tr>
-            <tr><td style="padding:8px;color:#6b7280">Departure</td><td style="padding:8px">${ticketDetails.departure}</td></tr>
-            <tr><td style="padding:8px;color:#6b7280">Seat</td><td style="padding:8px">${ticketDetails.seatNumber}</td></tr>
-            <tr><td style="padding:8px;color:#6b7280">Amount Paid</td><td style="padding:8px">₦${ticketDetails.amount}</td></tr>
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px 0">
+          <p style="color:#111827;font-size:15px">Hi ${firstName}, your booking is confirmed — here's your ticket.</p>
+
+          <table role="presentation" style="width:100%;border-collapse:collapse;border-radius:16px;overflow:hidden;border:1px solid #f3f4f6;margin-top:16px">
+            <tr>
+              <td style="padding:20px 20px 12px">
+                <table role="presentation"><tr>
+                  <td><img src="${logoUrl}" alt="" width="36" height="36" style="display:block;object-fit:contain" /></td>
+                  <td style="padding-left:12px">
+                    <div style="font-weight:800;color:#111827;letter-spacing:-0.01em">MAID AUTOS LIMITED</div>
+                    <span style="display:inline-block;margin-top:4px;background:${maroon};color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">PASSENGER TICKET</span>
+                  </td>
+                </tr></table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 20px">
+                <table role="presentation" style="width:100%;border-collapse:collapse">
+                  ${field('Ticket Code', ticketCode)}
+                  ${field('Date', ticketDetails.departure)}
+                  ${field('Vehicle No', ticketDetails.vehicleNo)}
+                  ${field('Destination', `${ticketDetails.from} to ${ticketDetails.to}`)}
+                  ${field('Seat', String(ticketDetails.seatNumber))}
+                  ${field('Amount', `₦${ticketDetails.amount}`)}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 20px 18px;text-align:center;border-top:1px solid #f3f4f6;margin-top:8px">
+                <span style="color:${maroon};font-size:11px;font-weight:800;letter-spacing:0.03em">LUGGAGE AT OWNER'S RISK</span>
+              </td>
+            </tr>
           </table>
-          <p style="color:#6b7280;font-size:14px">${pdfBuffer ? 'Your ticket is attached as a PDF. Please keep it for reference.' : `Show this email or your ticket code (${ticketCode}) at boarding.`}</p>
+
+          <p style="color:#6b7280;font-size:13px;margin-top:16px">${pdfBuffer ? 'Your ticket is attached as a PDF. Please keep it for reference.' : `Show this email or your ticket code (${ticketCode}) at boarding.`}</p>
         </div>
       `,
       ...(pdfBuffer

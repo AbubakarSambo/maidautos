@@ -1,14 +1,16 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, Share2, ArrowRight, Bus } from 'lucide-react'
+import { CheckCircle, Share2, Bus, Ticket } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { BookingSteps } from '@/components/shared'
+import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, formatCurrency, getWhatsAppShareUrl } from '@/lib/utils'
 import type { Booking } from '@/types'
 
 export function ConfirmationPage() {
   const { ticketCode } = useParams<{ ticketCode: string }>()
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
 
   const { data: booking, isLoading } = useQuery<Booking>({
     queryKey: ['booking-ticket', ticketCode],
@@ -32,7 +34,6 @@ export function ConfirmationPage() {
   const from = booking.pickupStop.stop.name
   const to = booking.dropoffStop.stop.name
   const departure = formatDateTime(booking.trip.departureDateTime)
-  const seatNumbers = bookings.map((b) => b.seatNumber).sort((a, b) => a - b)
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
 
   return (
@@ -49,77 +50,67 @@ export function ConfirmationPage() {
           <p className="text-gray-500 mt-1">{bookings.length > 1 ? `${bookings.length} tickets have been issued` : 'Your ticket has been issued'}</p>
         </div>
 
-        {/* Ticket card */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-          {/* Header strip */}
-          <div className="px-5 py-4" style={{ backgroundColor: '#610000' }}>
-            <div className="flex items-center justify-between text-white">
-              <div className="flex items-center gap-2">
-                <Bus className="w-5 h-5 text-[#ffb4a8]" />
-                <span className="font-bold text-lg">MaidAutos</span>
+        {/* Ticket — styled after our physical paper stub */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex">
+          {/* Counterfoil */}
+          <div
+            className="w-12 flex-shrink-0 flex flex-col items-center justify-between py-4 border-r-2 border-dashed border-white/20"
+            style={{ backgroundColor: '#610000' }}
+          >
+            <img src="/logo.png" alt="" className="w-7 h-7 object-contain brightness-0 invert" />
+            <span className="text-[#ffb4a8] text-[10px] font-mono tracking-widest" style={{ writingMode: 'vertical-rl' }}>
+              {booking.ticketCode}
+            </span>
+          </div>
+
+          {/* Main stub */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+              <img src="/logo.png" alt="MaidAutos" className="h-9 w-auto flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-extrabold text-gray-900 leading-tight tracking-tight">MAID AUTOS LIMITED</p>
+                <span className="inline-block mt-1 text-[10px] font-bold text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#610000' }}>
+                  PASSENGER TICKET
+                </span>
               </div>
+            </div>
+
+            {/* Form-style fields */}
+            <div className="px-5 pb-1">
+              <TicketField label="Date" value={departure} />
+              <TicketField label="Vehicle No" value={booking.trip.car.plateNumber} />
+              <TicketField label="Destination" value={`${from} to ${to}`} />
+              <TicketField label={bookings.length > 1 ? 'Total Amount' : 'Amount'} value={formatCurrency(totalAmount)} valueClassName="text-primary" />
               {bookings.length === 1 ? (
-                <span className="text-[#ffb4a8] text-sm font-mono">{booking.ticketCode}</span>
+                <TicketField label="Seat" value={`${booking.seatNumber}`} valueClassName="text-primary" />
               ) : (
-                <span className="text-[#ffb4a8] text-sm font-mono">{bookings.length} tickets</span>
+                <div className="py-2 border-b border-gray-200">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Seats</span>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5 justify-end">
+                    {bookings.map((b) => (
+                      <span key={b.id} className="text-xs font-mono bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-gray-600">
+                        {b.seatNumber} · {b.ticketCode}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-          </div>
 
-          {bookings.length > 1 && (
-            <div className="px-5 py-3 border-b border-gray-100 space-y-1.5">
-              {bookings.map((b) => {
-                const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName
-                return (
-                  <div key={b.id} className="flex items-center justify-between text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
-                    <span className="text-gray-600 font-mono">Seat {b.seatNumber} · {b.ticketCode}</span>
-                    {name && <span className="text-gray-500 font-medium">{name}</span>}
-                  </div>
-                )
-              })}
+            {/* Tagline */}
+            <div className="px-5 py-3 flex items-center justify-center gap-2 border-t border-gray-100">
+              <Bus className="w-4 h-4" style={{ color: '#610000' }} />
+              <span className="text-xs font-extrabold tracking-wide" style={{ color: '#610000' }}>LUGGAGE AT OWNER'S RISK</span>
+              <Bus className="w-4 h-4" style={{ color: '#610000' }} />
             </div>
-          )}
 
-          {/* Route */}
-          <div className="px-5 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <p className="text-xs text-gray-400">From</p>
-                <p className="font-bold text-xl text-gray-900">{from}</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              <div className="flex-1 text-right">
-                <p className="text-xs text-gray-400">To</p>
-                <p className="font-bold text-xl text-gray-900">{to}</p>
-              </div>
+            {/* Payment status */}
+            <div className="px-5 pb-4">
+              <span className={`text-xs px-2 py-1 rounded-full font-semibold ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                {booking.paymentStatus === 'PAID' ? 'Paid' : 'Payment Pending — Pay to driver/agent before boarding'}
+              </span>
             </div>
-          </div>
-
-          {/* Details grid */}
-          <div className="px-5 py-4 grid grid-cols-2 gap-4 border-b border-gray-100">
-            <div>
-              <p className="text-xs text-gray-400">Departure</p>
-              <p className="font-semibold text-gray-900 text-sm">{departure}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">{bookings.length > 1 ? 'Seats' : 'Seat'}</p>
-              <p className="font-bold text-2xl text-primary">{seatNumbers.join(', ')}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">Vehicle</p>
-              <p className="font-semibold text-gray-900 text-sm">{booking.trip.car.make} {booking.trip.car.model}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400">{bookings.length > 1 ? 'Total Amount' : 'Amount'}</p>
-              <p className="font-semibold text-gray-900 text-sm">{formatCurrency(totalAmount)}</p>
-            </div>
-          </div>
-
-          {/* Payment status */}
-          <div className="px-5 py-3">
-            <span className={`text-xs px-2 py-1 rounded-full font-semibold ${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-              {booking.paymentStatus === 'PAID' ? 'Paid' : 'Payment Pending — Pay to driver/agent before boarding'}
-            </span>
           </div>
         </div>
 
@@ -135,6 +126,25 @@ export function ConfirmationPage() {
           </a>
         </div>
 
+        {isAuthenticated ? (
+          <Link
+            to="/account/bookings"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:brightness-110 text-white py-3 rounded-xl font-bold text-sm shadow-lg transition-colors"
+          >
+            <Ticket className="w-4 h-4" /> View My Trips
+          </Link>
+        ) : (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
+            <p className="text-xs text-gray-600">Save this trip to your account so you can find it later.</p>
+            <button
+              onClick={() => navigate(booking.guestEmail ? `/register?email=${encodeURIComponent(booking.guestEmail)}` : '/register')}
+              className="mt-1.5 text-sm font-bold text-primary hover:underline"
+            >
+              Create an account
+            </button>
+          </div>
+        )}
+
         <button
           onClick={() => navigate('/')}
           className="w-full text-center text-sm text-gray-500 hover:text-gray-700"
@@ -143,6 +153,15 @@ export function ConfirmationPage() {
         </button>
       </div>
       </div>
+    </div>
+  )
+}
+
+function TicketField({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
+  return (
+    <div className="flex items-baseline gap-3 border-b border-gray-200 py-2">
+      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{label}:</span>
+      <span className={`flex-1 text-right font-semibold text-gray-900 truncate ${valueClassName || ''}`}>{value}</span>
     </div>
   )
 }

@@ -56,7 +56,11 @@ export class AuthService {
       });
     });
 
-    await this.emailService.sendVerificationEmail(dto.email.toLowerCase(), dto.firstName, token);
+    // The account is already created at this point — a failed send shouldn't fail the
+    // whole registration request (the user can always request a new link via resendVerification).
+    this.emailService.sendVerificationEmail(dto.email.toLowerCase(), dto.firstName, token).catch((err) => {
+      this.logger.error(`Failed to send verification email to ${dto.email.toLowerCase()}: ${err.message}`);
+    });
 
     return { message: 'Registration successful. Please check your email to verify your account.', email: dto.email.toLowerCase() };
   }
@@ -202,7 +206,9 @@ export class AuthService {
       data: { userId: user.id, token, type: TokenType.EMAIL_VERIFICATION, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
 
-    this.emailService.sendVerificationEmail(user.email, user.firstName, token).catch(() => {});
+    this.emailService.sendVerificationEmail(user.email, user.firstName, token).catch((err) => {
+      this.logger.error(`Failed to resend verification email to ${user.email}: ${err.message}`);
+    });
     return { message };
   }
 

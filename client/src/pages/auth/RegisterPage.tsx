@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi } from '@/api'
 import { toast } from 'sonner'
 import { AuthShell } from '@/components/layout'
@@ -18,7 +18,11 @@ type Form = z.infer<typeof schema>
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors } } = useForm<Form>({ resolver: zodResolver(schema) })
+  const [searchParams] = useSearchParams()
+  const { register, handleSubmit, formState: { errors } } = useForm<Form>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: searchParams.get('email') || '' },
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: authApi.register,
