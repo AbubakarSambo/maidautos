@@ -13,10 +13,19 @@ const PENDING_PAYMENT_HOLD_MINUTES = 15;
 export class TripsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(filters?: { status?: TripStatus; date?: string }) {
+  async findAll(filters?: { status?: TripStatus; date?: string; dateFrom?: string; dateTo?: string }) {
     const where: any = {};
     if (filters?.status) where.status = filters.status;
-    if (filters?.date) {
+    if (filters?.dateFrom || filters?.dateTo) {
+      const range: any = {};
+      if (filters.dateFrom) range.gte = new Date(filters.dateFrom);
+      if (filters.dateTo) {
+        const to = new Date(filters.dateTo);
+        to.setDate(to.getDate() + 1);
+        range.lt = to;
+      }
+      where.departureDateTime = range;
+    } else if (filters?.date) {
       const d = new Date(filters.date);
       const next = new Date(d);
       next.setDate(next.getDate() + 1);

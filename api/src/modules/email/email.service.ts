@@ -26,7 +26,7 @@ export class EmailService {
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
           <h2>Welcome to MaidAutos, ${firstName}!</h2>
           <p>Please verify your email address to get started.</p>
-          <a href="${verifyUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">Verify Email</a>
+          <a href="${verifyUrl}" style="display:inline-block;background:#610000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">Verify Email</a>
           <p style="color:#6b7280;font-size:14px">This link expires in 24 hours. If you didn't create this account, you can ignore this email.</p>
         </div>
       `,
@@ -43,7 +43,7 @@ export class EmailService {
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
           <h2>Password Reset</h2>
           <p>Hi ${firstName}, we received a request to reset your password.</p>
-          <a href="${resetUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">Reset Password</a>
+          <a href="${resetUrl}" style="display:inline-block;background:#610000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">Reset Password</a>
           <p style="color:#6b7280;font-size:14px">This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
         </div>
       `,

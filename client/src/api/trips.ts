@@ -4,7 +4,7 @@ export const tripsApi = {
   search: (from: string, to: string, date: string) =>
     apiClient.get('/trips/search', { params: { from, to, date } }).then((r) => r.data.data),
 
-  findAll: (params?: { status?: string; date?: string }) =>
+  findAll: (params?: { status?: string; date?: string; dateFrom?: string; dateTo?: string }) =>
     apiClient.get('/trips', { params }).then((r) => r.data.data),
 
   findOne: (id: string) =>

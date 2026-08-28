@@ -139,7 +139,12 @@ export class BookingsService {
 
     // Check seat availability for the segment. A booking still awaiting online
     // payment only holds its seat for PENDING_PAYMENT_HOLD_MINUTES — after that
-    // the hold expires and the seat is bookable again.
+    // the hold expires and the seat is bookable again. Opportunistically clean up any
+    // expired holds on this trip so they don't linger forever as phantom "confirmed"
+    // bookings in booking lists — there's no scheduler in this app, so this piggybacks
+    // on every booking attempt instead.
+    await this.expireStaleHolds(dto.tripId);
+
     const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
     const routeStopOrderMap = new Map(trip.route.routeStops.map((rs) => [rs.id, rs.order]));
     const seatBookings = await this.prisma.booking.findMany({
@@ -247,6 +252,32 @@ export class BookingsService {
     }
 
     return { bookings, groupId, totalAmount: bookings.reduce((sum, b) => sum + Number(b.amount), 0) };
+  }
+
+  // Cancels any booking on this trip that's still an unpaid, expired Paystack hold —
+  // self-healing cleanup since nothing else marks these CANCELLED on its own.
+  private async expireStaleHolds(tripId: string) {
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
+    await this.prisma.booking.updateMany({
+      where: {
+        tripId,
+        status: 'CONFIRMED',
+        paymentMethod: 'PAYSTACK',
+        paymentStatus: 'PENDING',
+        createdAt: { lt: holdCutoff },
+      },
+      data: { status: 'CANCELLED' },
+    });
+  }
+
+  // Called when a Paystack payment comes back as anything other than success (the
+  // customer cancelled, closed the checkout, or the charge failed) — releases the
+  // seat(s) immediately instead of making the customer wait out the hold window.
+  async cancelPendingByReference(reference: string) {
+    await this.prisma.booking.updateMany({
+      where: { paystackReference: reference, paymentStatus: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
   }
 
   async findByGroupId(groupId: string) {

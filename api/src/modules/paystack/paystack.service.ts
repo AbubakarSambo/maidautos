@@ -66,6 +66,14 @@ export class PaystackService {
       } catch (err) {
         this.logger.error(`Failed to confirm payment for ${reference}: ${err.message}`);
       }
+    } else if (['abandoned', 'failed', 'reversed'].includes(data.data.status)) {
+      // The customer cancelled/closed checkout, or the charge failed outright — release
+      // the seat(s) now instead of making them wait out the hold window to retry.
+      try {
+        await this.bookingsService.cancelPendingByReference(reference);
+      } catch (err) {
+        this.logger.error(`Failed to release seats for abandoned payment ${reference}: ${err.message}`);
+      }
     }
 
     return {

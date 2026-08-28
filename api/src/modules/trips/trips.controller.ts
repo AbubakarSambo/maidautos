@@ -15,8 +15,13 @@ export class TripsController {
   @ApiBearerAuth()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @Get()
-  findAll(@Query('status') status?: TripStatus, @Query('date') date?: string) {
-    return this.tripsService.findAll({ status, date });
+  findAll(
+    @Query('status') status?: TripStatus,
+    @Query('date') date?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.tripsService.findAll({ status, date, dateFrom, dateTo });
   }
 
   @Public()

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { paystackApi } from '@/api'
+import { toast } from 'sonner'
 
 export function PaymentCallbackPage() {
   const [searchParams] = useSearchParams()
@@ -19,6 +20,7 @@ export function PaymentCallbackPage() {
         if (data.ticketCode) {
           navigate(`/booking/confirmation/${data.ticketCode}`, { replace: true })
         } else {
+          toast.error('Payment was not completed — your seat has been released. You can try again.')
           navigate('/')
         }
       })

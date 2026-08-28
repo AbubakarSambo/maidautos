@@ -16,15 +16,29 @@ const STATUS_COLORS: Record<TripStatus, string> = {
   CANCELLED: 'bg-red-100 text-red-600',
 }
 
+// Monday–Sunday of the week containing `d`, as YYYY-MM-DD.
+function getThisWeekRange(d = new Date()) {
+  const day = d.getDay() // 0 = Sunday
+  const mondayOffset = day === 0 ? -6 : 1 - day
+  const monday = new Date(d)
+  monday.setDate(d.getDate() + mondayOffset)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const toISODate = (x: Date) => x.toISOString().split('T')[0]
+  return { from: toISODate(monday), to: toISODate(sunday) }
+}
+
 export function AdminTripsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<TripStatus | ''>('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const thisWeek = getThisWeekRange()
+  const [dateFrom, setDateFrom] = useState(thisWeek.from)
+  const [dateTo, setDateTo] = useState(thisWeek.to)
 
   const { data: trips = [], isLoading } = useQuery<Trip[]>({
-    queryKey: ['admin-trips', statusFilter, date],
-    queryFn: () => tripsApi.findAll({ status: statusFilter || undefined, date }),
+    queryKey: ['admin-trips', statusFilter, dateFrom, dateTo],
+    queryFn: () => tripsApi.findAll({ status: statusFilter || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined }),
   })
 
   const { mutate: updateStatus } = useMutation({
@@ -45,8 +59,22 @@ export function AdminTripsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-2.5 bg-white border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+      <div className="flex gap-3 flex-wrap items-center">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">From</label>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-3 py-2.5 bg-white border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">To</label>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-3 py-2.5 bg-white border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+        </div>
+        <button
+          type="button"
+          onClick={() => { const w = getThisWeekRange(); setDateFrom(w.from); setDateTo(w.to) }}
+          className="text-xs font-semibold text-primary hover:underline"
+        >
+          This week
+        </button>
         <Select
           value={statusFilter}
           onChange={(v) => setStatusFilter(v as TripStatus | '')}

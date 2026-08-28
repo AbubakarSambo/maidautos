@@ -25,36 +25,48 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({
+    const existingByEmail = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
-    if (existing) throw new ConflictException('Email already registered');
+    if (existingByEmail) throw new ConflictException('Email already registered');
+
+    if (dto.phone) {
+      const existingByPhone = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+      if (existingByPhone) throw new ConflictException('Phone number already registered');
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const token = crypto.randomBytes(32).toString('hex');
 
-    await this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email: dto.email.toLowerCase(),
-          phone: dto.phone,
-          passwordHash,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          role: 'PASSENGER',
-          isEmailVerified: false,
-        },
-      });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email: dto.email.toLowerCase(),
+            phone: dto.phone,
+            passwordHash,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            role: 'PASSENGER',
+            isEmailVerified: false,
+          },
+        });
 
-      await tx.token.create({
-        data: {
-          userId: user.id,
-          token,
-          type: TokenType.EMAIL_VERIFICATION,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
+        await tx.token.create({
+          data: {
+            userId: user.id,
+            token,
+            type: TokenType.EMAIL_VERIFICATION,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        });
       });
-    });
+    } catch (err) {
+      // Narrows the race-condition window between the checks above and the insert —
+      // a concurrent signup with the same email/phone still gets a clean 409, not a 500.
+      if (err.code === 'P2002') throw new ConflictException('Email or phone number already registered');
+      throw err;
+    }
 
     // The account is already created at this point — a failed send shouldn't fail the
     // whole registration request (the user can always request a new link via resendVerification).
