@@ -35,6 +35,16 @@ export class CreateCarDto {
   @IsBoolean()
   hasAC?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  hasWifi?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  hasMeals?: boolean;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

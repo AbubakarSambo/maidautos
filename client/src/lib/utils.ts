@@ -1,9 +1,25 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import type { CarType, SeatLayout } from '@/types'
+import type { CarType, SeatLayout, RouteStop, Trip } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Mirrors the pricing logic in api's bookings.service.ts create(): the listed segment
+// fare (stop-to-stop, from route pricing), scaled by the trip's priceOverride if set —
+// e.g. a route-wide override to 60% of the listed full-route price makes every segment
+// 60% too, so relative stop-to-stop pricing stays consistent.
+export function getSegmentFare(trip: Trip, pickupStop: RouteStop, dropoffStop: RouteStop): number {
+  let fare = Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
+  if (trip.priceOverride != null) {
+    const stops = trip.route.routeStops
+    const first = stops[0]
+    const last = stops[stops.length - 1]
+    const fullRouteFare = Number(last.priceFromOrigin) - Number(first.priceFromOrigin)
+    if (fullRouteFare > 0) fare = fare * (trip.priceOverride / fullRouteFare)
+  }
+  return fare
 }
 
 export function formatCurrency(amount: number | string) {
@@ -29,9 +45,21 @@ export function formatDuration(minutes: number) {
 // Row 0 = frontmost passenger row.
 export function getSeatLayout(carType: CarType, capacity: number): SeatLayout {
   switch (carType) {
-    case 'SEDAN':
-      // 2 rows: [1,null,2] (front), [3,4,5] (back row of 3)
-      return { rows: [[1, null, 2], [3, 4, 5]] }
+    case 'SEDAN': {
+      // Front row: up to 2 passenger seats (aisle gap between). Remaining capacity
+      // fills back rows of 3. capacity=5 reduces to the classic [1,_,2],[3,4,5].
+      const rows: Array<Array<number | null>> = []
+      let seat = 1
+      const frontCount = Math.min(2, capacity)
+      if (frontCount === 2) rows.push([seat++, null, seat++])
+      else if (frontCount === 1) rows.push([seat++])
+      while (seat <= capacity) {
+        const row: Array<number | null> = []
+        for (let i = 0; i < 3; i++) row.push(seat <= capacity ? seat++ : null)
+        rows.push(row)
+      }
+      return { rows }
+    }
 
     case 'SIENA': {
       // Toyota Sienna typical layout varies by capacity

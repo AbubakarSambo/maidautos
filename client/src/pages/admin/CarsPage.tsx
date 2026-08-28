@@ -16,6 +16,8 @@ type CarForm = {
   type: CarType
   capacity: number
   hasAC: string
+  hasWifi: string
+  hasMeals: string
   premiumSeatNumbers: string
   premiumSeatSurcharge: number
 }
@@ -41,7 +43,7 @@ export function AdminCarsPage() {
   const { data: cars = [], isLoading } = useQuery<Car[]>({ queryKey: ['cars'], queryFn: carsApi.findAll })
 
   const { register, control, handleSubmit, reset } = useForm<CarForm>({
-    defaultValues: { type: 'SEDAN', hasAC: 'true', premiumSeatNumbers: '', premiumSeatSurcharge: 0 },
+    defaultValues: { type: 'SEDAN', hasAC: 'true', hasWifi: 'false', hasMeals: 'false', premiumSeatNumbers: '', premiumSeatSurcharge: 0 },
   })
   const { mutate: create, isPending } = useMutation({
     mutationFn: carsApi.create,
@@ -57,6 +59,13 @@ export function AdminCarsPage() {
       qc.invalidateQueries({ queryKey: ['cars'] })
       setEditingPricingId(null)
     },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed'),
+  })
+
+  const { mutate: updateAmenity } = useMutation({
+    mutationFn: ({ id, field, value }: { id: string; field: 'hasAC' | 'hasWifi' | 'hasMeals'; value: boolean }) =>
+      carsApi.update(id, { [field]: value }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['cars'] }),
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed'),
   })
 
@@ -127,6 +136,8 @@ export function AdminCarsPage() {
               year: Number(d.year),
               capacity: Number(d.capacity),
               hasAC: d.hasAC === 'true',
+              hasWifi: d.hasWifi === 'true',
+              hasMeals: d.hasMeals === 'true',
               premiumSeatNumbers: parseSeatNumbers(d.premiumSeatNumbers),
               premiumSeatSurcharge: Number(d.premiumSeatSurcharge) || 0,
             }),
@@ -160,6 +171,36 @@ export function AdminCarsPage() {
               <label className="text-xs text-gray-500">AC</label>
               <Controller
                 name="hasAC"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]}
+                    className="mt-0.5 w-full px-3 py-2 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Wi-Fi</label>
+              <Controller
+                name="hasWifi"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]}
+                    className="mt-0.5 w-full px-3 py-2 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500">Meals</label>
+              <Controller
+                name="hasMeals"
                 control={control}
                 render={({ field }) => (
                   <Select
@@ -234,7 +275,27 @@ export function AdminCarsPage() {
                       {car.capacity} seats <Pencil className="w-3 h-3" />
                     </button>
                   )}
-                  <span>· {car.hasAC ? 'AC' : 'No AC'}</span>
+                  <span className="inline-flex items-center gap-1">
+                    {([
+                      ['hasAC', 'AC'],
+                      ['hasWifi', 'Wi-Fi'],
+                      ['hasMeals', 'Meals'],
+                    ] as const).map(([field, label]) => (
+                      <button
+                        key={field}
+                        type="button"
+                        onClick={() => updateAmenity({ id: car.id, field, value: !car[field] })}
+                        title={`Click to ${car[field] ? 'disable' : 'enable'} ${label}`}
+                        className={`text-xs px-1.5 py-0.5 rounded-full font-semibold border transition-colors ${
+                          car[field]
+                            ? 'bg-primary/10 text-primary border-primary/30'
+                            : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </span>
                 </p>
                 <div className="text-sm text-gray-500 mt-1">
                   {editingPricingId === car.id ? (

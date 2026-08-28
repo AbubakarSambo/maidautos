@@ -171,6 +171,8 @@ model Car {
   type        CarType
   capacity    Int
   hasAC       Boolean   @default(true) @map("has_ac")
+  hasWifi     Boolean   @default(false) @map("has_wifi")
+  hasMeals    Boolean   @default(false) @map("has_meals")
   status      CarStatus @default(ACTIVE)
   photos      String[]
   notes       String?

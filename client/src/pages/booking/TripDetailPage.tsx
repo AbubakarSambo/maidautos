@@ -44,9 +44,7 @@ export function TripDetailPage() {
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">Loading trip...</div>
   if (!trip) return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">Trip not found</div>
 
-  const price = pickupStop && dropoffStop
-    ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
-    : 0
+  const price = pickupStop && dropoffStop ? getSegmentFare(trip, pickupStop, dropoffStop) : 0
   const premiumSeatNumbers = trip.car.premiumSeatNumbers
   const premiumSeatSurcharge = Number(trip.car.premiumSeatSurcharge)
   const seatPrice = (seat: number) => price + (premiumSeatNumbers.includes(seat) ? premiumSeatSurcharge : 0)
@@ -87,10 +85,12 @@ export function TripDetailPage() {
             <Bus className="w-4 h-4" />
             <span>{trip.car.make} {trip.car.model} · {trip.car.hasAC ? 'AC' : 'No AC'} · {trip.car.type}</span>
           </div>
-          <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
-            <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>
-            <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>
-          </div>
+          {(trip.car.hasWifi || trip.car.hasMeals) && (
+            <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
+              {trip.car.hasWifi && <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>}
+              {trip.car.hasMeals && <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>}
+            </div>
+          )}
         </div>
 
         {/* Seat map */}

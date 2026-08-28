@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query'
 import {
   MapPin, Navigation, Calendar, Users, Search, Bus, Clock, ArrowRight, Menu, X,
   ShieldCheck, Armchair, Star, Banknote, Ticket, BadgeCheck, Wifi, UtensilsCrossed,
-  UserCircle, LogOut,
+  UserCircle, LogOut, Snowflake,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
-import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
+import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
 import { Select } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
 import type { Stop, Trip } from '@/types'
@@ -370,9 +370,7 @@ export function SearchPage() {
                 {results.map((trip) => {
                   const fromStop = trip.route.routeStops.find((rs) => rs.stopId === from)
                   const toStop = trip.route.routeStops.find((rs) => rs.stopId === to)
-                  const price = toStop && fromStop
-                    ? Number(toStop.priceFromOrigin) - Number(fromStop.priceFromOrigin)
-                    : 0
+                  const price = toStop && fromStop ? getSegmentFare(trip, fromStop, toStop) : 0
 
                   return (
                     <div
@@ -402,10 +400,13 @@ export function SearchPage() {
                           {trip.car.make} {trip.car.model}
                         </span>
                       </div>
-                      <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
-                        <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>
-                        <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>
-                      </div>
+                      {(trip.car.hasWifi || trip.car.hasMeals || trip.car.hasAC) && (
+                        <div className="mt-2.5 flex items-center gap-3 text-xs text-primary/80 font-medium">
+                          {trip.car.hasAC && <span className="flex items-center gap-1"><Snowflake className="w-3.5 h-3.5" /> AC</span>}
+                          {trip.car.hasWifi && <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5" /> Free Wi-Fi</span>}
+                          {trip.car.hasMeals && <span className="flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Free Meals</span>}
+                        </div>
+                      )}
                       <div className="mt-3 flex items-center justify-between">
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                           trip.status === 'BOARDING'

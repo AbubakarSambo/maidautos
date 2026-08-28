@@ -167,9 +167,19 @@ export class BookingsService {
       }
     }
 
-    // Calculate base amount: priceFromOrigin[dropoff] - priceFromOrigin[pickup].
-    // Seats on the car's premium list cost this plus a flat surcharge.
-    const baseAmount = Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin);
+    // Calculate base amount: priceFromOrigin[dropoff] - priceFromOrigin[pickup]. If this
+    // trip has a priceOverride (e.g. a no-AC car costs less), scale that segment fare
+    // proportionally against the override so relative stop-to-stop pricing is preserved
+    // — e.g. a route-wide override to 60% of the listed price makes every segment 60% too.
+    let baseAmount = Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin);
+    if (trip.priceOverride != null) {
+      const firstStop = trip.route.routeStops[0];
+      const lastStop = trip.route.routeStops[trip.route.routeStops.length - 1];
+      const fullRouteFare = Number(lastStop.priceFromOrigin) - Number(firstStop.priceFromOrigin);
+      if (fullRouteFare > 0) {
+        baseAmount = baseAmount * (Number(trip.priceOverride) / fullRouteFare);
+      }
+    }
     if (baseAmount <= 0) throw new BadRequestException('Invalid price calculation for this segment');
     const premiumSurcharge = Number(trip.car.premiumSeatSurcharge);
     const amountForSeat = (seatNumber: number) =>

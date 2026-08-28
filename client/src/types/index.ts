@@ -56,6 +56,8 @@ export interface Car {
   type: CarType
   capacity: number
   hasAC: boolean
+  hasWifi: boolean
+  hasMeals: boolean
   status: CarStatus
   photos: string[]
   notes: string | null

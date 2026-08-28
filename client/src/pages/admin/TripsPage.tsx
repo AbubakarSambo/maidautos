@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, ArrowRight, Bus } from 'lucide-react'
+import { Plus, ArrowRight, Bus, Snowflake, Wifi, UtensilsCrossed } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { tripsApi } from '@/api'
 import { formatDateTime } from '@/lib/utils'
@@ -108,6 +108,11 @@ export function AdminTripsPage() {
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span>{formatDateTime(trip.departureDateTime)}</span>
                 <span className="flex items-center gap-1"><Bus className="w-3.5 h-3.5" />{trip.car.make} {trip.car.model}</span>
+                <span className="flex items-center gap-1.5 text-gray-400">
+                  {trip.car.hasAC && <span title="AC"><Snowflake className="w-3.5 h-3.5" /></span>}
+                  {trip.car.hasWifi && <span title="Wi-Fi"><Wifi className="w-3.5 h-3.5" /></span>}
+                  {trip.car.hasMeals && <span title="Meals"><UtensilsCrossed className="w-3.5 h-3.5" /></span>}
+                </span>
                 <span className="ml-auto text-gray-400 text-xs">{trip._count?.bookings ?? 0}/{trip.car.capacity} seats</span>
               </div>
             </div>
