@@ -26,12 +26,17 @@ export function formatCurrency(amount: number | string) {
   return `₦${Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 0 })}`
 }
 
+// Always rendered in Nigeria time (WAT) regardless of the viewer's own device
+// timezone — this is a Nigeria-only service, so a trip at "8am" should read as 8am
+// whether the person looking at it is in Lagos or, say, London.
+const NG_TIMEZONE = 'Africa/Lagos'
+
 export function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(date).toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: NG_TIMEZONE })
 }
 
 export function formatDateTime(date: string | Date) {
-  return new Date(date).toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(date).toLocaleString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: NG_TIMEZONE })
 }
 
 export function formatDuration(minutes: number) {

@@ -9,6 +9,18 @@ import { TripStatus } from '@prisma/client';
 // still awaiting online payment only holds its seat for this long.
 const PENDING_PAYMENT_HOLD_MINUTES = 15;
 
+// Nigeria (WAT) is a fixed UTC+1 with no DST. Admin-entered datetime-local strings
+// (e.g. "2026-08-29T07:00") carry no timezone info, so parsing them with plain
+// `new Date(...)` depends on whatever timezone the server process happens to run in —
+// on a UTC server that silently shifts every departure time by an hour once displayed
+// back in Nigeria. Anchoring explicitly to +01:00 keeps the stored instant correct
+// regardless of the server's own timezone.
+function parseWatDateTime(localDateTime: string): Date {
+  if (/[Zz]|[+-]\d{2}:?\d{2}$/.test(localDateTime)) return new Date(localDateTime);
+  const withSeconds = localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
+  return new Date(`${withSeconds}+01:00`);
+}
+
 @Injectable()
 export class TripsService {
   constructor(private prisma: PrismaService) {}
@@ -177,7 +189,7 @@ export class TripsService {
         routeId: dto.routeId,
         carId: dto.carId,
         driverId: dto.driverId,
-        departureDateTime: new Date(dto.departureDateTime),
+        departureDateTime: parseWatDateTime(dto.departureDateTime),
         priceOverride: dto.priceOverride,
         notes: dto.notes,
       },
@@ -213,7 +225,7 @@ export class TripsService {
           routeId: dto.routeId,
           carId: dto.carId,
           driverId: dto.driverId,
-          departureDateTime: new Date(`${dateStr}T${dto.departureTime}:00`),
+          departureDateTime: parseWatDateTime(`${dateStr}T${dto.departureTime}`),
           priceOverride: dto.priceOverride,
           notes: dto.notes,
         });
@@ -232,7 +244,7 @@ export class TripsService {
   async update(id: string, dto: Partial<CreateTripDto>) {
     await this.findOne(id);
     const data: any = { ...dto };
-    if (dto.departureDateTime) data.departureDateTime = new Date(dto.departureDateTime);
+    if (dto.departureDateTime) data.departureDateTime = parseWatDateTime(dto.departureDateTime);
     return this.prisma.trip.update({ where: { id }, data });
   }
 

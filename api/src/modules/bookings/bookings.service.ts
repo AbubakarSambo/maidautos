@@ -405,7 +405,9 @@ export class BookingsService {
     await this.emailService.sendTicketEmail(email, firstName, booking.ticketCode, {
       from: booking.pickupStop.stop.name,
       to: booking.dropoffStop.stop.name,
-      departure: booking.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }),
+      // Explicit timeZone — this runs server-side, where the process timezone (e.g. UTC
+      // on Railway) would otherwise silently shift the printed departure time.
+      departure: booking.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }),
       seatNumber: booking.seatNumber,
       vehicleNo: booking.trip.car.plateNumber,
       amount: Number(booking.amount).toLocaleString('en-NG'),
