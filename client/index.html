@@ -8,6 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <!-- Inter's default subset doesn't include the Naira sign (₦, U+20A6) — this loads
+         Noto Sans scoped to just that glyph as a fallback, so ₦ renders correctly instead
+         of falling back to an inconsistent OS default font. -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&text=%E2%82%A6&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

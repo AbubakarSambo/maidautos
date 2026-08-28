@@ -51,13 +51,11 @@ export function formatDuration(minutes: number) {
 export function getSeatLayout(carType: CarType, capacity: number): SeatLayout {
   switch (carType) {
     case 'SEDAN': {
-      // Front row: up to 2 passenger seats (aisle gap between). Remaining capacity
-      // fills back rows of 3. capacity=5 reduces to the classic [1,_,2],[3,4,5].
+      // A sedan has exactly one front passenger seat (the other front spot is the
+      // driver's). Everything else fills back rows of 3. capacity=4 -> 1 front, 3 back.
       const rows: Array<Array<number | null>> = []
       let seat = 1
-      const frontCount = Math.min(2, capacity)
-      if (frontCount === 2) rows.push([seat++, null, seat++])
-      else if (frontCount === 1) rows.push([seat++])
+      if (capacity >= 1) rows.push([seat++])
       while (seat <= capacity) {
         const row: Array<number | null> = []
         for (let i = 0; i < 3; i++) row.push(seat <= capacity ? seat++ : null)
