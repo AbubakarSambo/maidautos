@@ -4,10 +4,12 @@ import { useQuery } from '@tanstack/react-query'
 import {
   MapPin, Navigation, Calendar, Users, Search, Bus, Clock, ArrowRight, Menu, X,
   ShieldCheck, Armchair, Star, Banknote, Ticket, BadgeCheck, Wifi, UtensilsCrossed,
+  UserCircle, LogOut,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
 import { Select } from '@/components/shared'
+import { useAuthStore } from '@/stores/auth'
 import type { Stop, Trip } from '@/types'
 
 const FEATURES = [
@@ -74,6 +76,7 @@ const TESTIMONIALS = [
 export function SearchPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isAuthenticated, user, logout } = useAuthStore()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -162,18 +165,39 @@ export function SearchPage() {
             <Link to="/routes" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Routes</Link>
             <a href="#why-us" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Why Us</a>
             <div className="h-6 w-px bg-outline-variant" />
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => navigate('/register')}
-              className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-all whitespace-nowrap"
-            >
-              Register
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/account/bookings"
+                  className="flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  <UserCircle className="w-5 h-5" />
+                  {user?.firstName || 'My Bookings'}
+                </Link>
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="p-2 text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-all whitespace-nowrap"
+                >
+                  Register
+                </button>
+              </>
+            )}
           </div>
           <button
             className="md:hidden p-2 text-primary"
@@ -191,18 +215,39 @@ export function SearchPage() {
             <Link to="/routes" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Routes</Link>
             <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Why Us</a>
             <div className="h-px w-full bg-outline-variant" />
-            <button
-              onClick={() => { setMobileMenuOpen(false); navigate('/login') }}
-              className="text-left text-sm font-medium text-on-surface-variant"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
-              className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-sm font-bold text-center"
-            >
-              Register
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/account/bookings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm font-medium text-on-surface-variant"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  {user?.firstName || 'My Bookings'}
+                </Link>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); logout() }}
+                  className="flex items-center gap-2 text-left text-sm font-medium text-on-surface-variant"
+                >
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/login') }}
+                  className="text-left text-sm font-medium text-on-surface-variant"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/register') }}
+                  className="bg-primary text-on-primary px-6 py-2.5 rounded-xl text-sm font-bold text-center"
+                >
+                  Register
+                </button>
+              </>
+            )}
           </div>
         )}
       </header>
@@ -531,8 +576,17 @@ export function SearchPage() {
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="mailto:maidautosolutions@gmail.com">maidautosolutions@gmail.com</a></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="tel:+2349122222656">0912 222 2656</a></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="tel:+2349122222856">0912 222 2856</a></li>
-              <li><button onClick={() => navigate('/register')} className="text-sm text-white/60 hover:text-white transition-colors">Create Account</button></li>
-              <li><button onClick={() => navigate('/login')} className="text-sm text-white/60 hover:text-white transition-colors">Sign In</button></li>
+              {isAuthenticated ? (
+                <>
+                  <li><Link to="/account/bookings" className="text-sm text-white/60 hover:text-white transition-colors">My Bookings</Link></li>
+                  <li><button onClick={logout} className="text-sm text-white/60 hover:text-white transition-colors">Sign Out</button></li>
+                </>
+              ) : (
+                <>
+                  <li><button onClick={() => navigate('/register')} className="text-sm text-white/60 hover:text-white transition-colors">Create Account</button></li>
+                  <li><button onClick={() => navigate('/login')} className="text-sm text-white/60 hover:text-white transition-colors">Sign In</button></li>
+                </>
+              )}
             </ul>
           </div>
           <div className="space-y-8">
