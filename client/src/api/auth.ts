@@ -25,4 +25,7 @@ export const authApi = {
 
   getProfile: () =>
     apiClient.get('/auth/me').then((r) => r.data.data),
+
+  updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
+    apiClient.patch('/auth/me', data).then((r) => r.data.data),
 }

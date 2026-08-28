@@ -20,6 +20,7 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
   MyBookingsPage,
+  ProfilePage,
   AdminDashboardPage,
   AdminTripsPage,
   AdminTripDetailPage,
@@ -71,6 +72,7 @@ function App() {
           {/* Passenger account */}
           <Route element={<ProtectedRoute allowedRoles={['PASSENGER']} />}>
             <Route path="/account/bookings" element={<MyBookingsPage />} />
+            <Route path="/account/profile" element={<ProfilePage />} />
           </Route>
 
           {/* Admin — shared layout */}

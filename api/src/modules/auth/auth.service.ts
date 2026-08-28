@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
-import { RegisterDto, LoginDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
+import { RegisterDto, LoginDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, UpdateProfileDto } from './dto';
 import { TokenType } from '@prisma/client';
 import { GoogleProfile } from './strategies/google.strategy';
 
@@ -210,6 +210,16 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
     return this.formatUser(user);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    try {
+      const user = await this.prisma.user.update({ where: { id: userId }, data: dto });
+      return this.formatUser(user);
+    } catch (err) {
+      if (err.code === 'P2002') throw new ConflictException('That phone number is already in use');
+      throw err;
+    }
   }
 
   private async linkGuestBookings(userId: string, email: string) {
