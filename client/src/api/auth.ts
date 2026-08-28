@@ -1,4 +1,8 @@
-import apiClient from './client'
+import apiClient, { API_BASE_URL } from './client'
+
+// A full page navigation, not an XHR call — the backend redirects the browser to
+// Google's consent screen and back, so this can't go through axios.
+export const googleLoginUrl = `${API_BASE_URL}/auth/google`
 
 export const authApi = {
   register: (data: { firstName: string; lastName: string; email: string; phone?: string; password: string }) =>

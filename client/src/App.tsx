@@ -13,6 +13,7 @@ import {
   ConfirmationPage,
   PaymentCallbackPage,
   LoginPage,
+  GoogleCallbackPage,
   RegisterPage,
   VerifyEmailPage,
   CheckEmailPage,
@@ -61,6 +62,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Route>
+          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           <Route path="/check-email" element={<CheckEmailPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

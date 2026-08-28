@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { StopsService } from './stops.service';
 import { CreateStopDto } from './dto/create-stop.dto';
@@ -13,6 +13,19 @@ export class StopsController {
   @Get()
   findAll() {
     return this.stopsService.findAll();
+  }
+
+  @Public()
+  @Get('active')
+  findActive() {
+    return this.stopsService.findActive();
+  }
+
+  @Public()
+  @Get('destinations')
+  findDestinations(@Query('from') from: string) {
+    if (!from) throw new BadRequestException('Query param "from" is required');
+    return this.stopsService.findDestinationsFrom(from);
   }
 
   @Public()

@@ -22,7 +22,9 @@ export function AdminNewBookingPage() {
   const [pickupStopId, setPickupStopId] = useState('')
   const [dropoffStopId, setDropoffStopId] = useState('')
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<'PAYSTACK' | 'CASH'>('CASH')
+  // Admin-recorded bookings are always Cash — the agent is standing in front of a walk-in
+  // passenger, so there's no one for a Paystack link to go to.
+  const paymentMethod = 'CASH' as const
 
   // Passenger
   const [passengerMode, setPassengerMode] = useState<PassengerMode>('guest')
@@ -85,10 +87,12 @@ export function AdminNewBookingPage() {
   // Reset segment when trip changes
   useEffect(() => { setPickupStopId(''); setDropoffStopId(''); setSelectedSeat(null) }, [tripId])
 
-  const amount =
+  const baseAmount =
     pickupStop && dropoffStop
       ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
       : 0
+  const isPremiumSeat = !!selectedSeat && !!trip?.car.premiumSeatNumbers.includes(selectedSeat)
+  const amount = baseAmount + (isPremiumSeat ? Number(trip?.car.premiumSeatSurcharge ?? 0) : 0)
 
   const isReadyToBook =
     !!tripId &&
@@ -101,18 +105,20 @@ export function AdminNewBookingPage() {
     mutationFn: () =>
       bookingsApi.create({
         tripId,
-        seatNumber: selectedSeat!,
         pickupStopId,
         dropoffStopId,
         paymentMethod,
-        nokName: nokName || undefined,
-        nokPhone: nokPhone || undefined,
-        ...(passengerMode === 'search' && selectedUserId
-          ? { passengerUserId: selectedUserId }
-          : { guestName: guestName || undefined, guestEmail: guestEmail || undefined, guestPhone: guestPhone || undefined }),
+        passengers: [{
+          seatNumber: selectedSeat!,
+          nokName: nokName || undefined,
+          nokPhone: nokPhone || undefined,
+          ...(passengerMode === 'search' && selectedUserId
+            ? { passengerUserId: selectedUserId }
+            : { guestName: guestName || undefined, guestEmail: guestEmail || undefined, guestPhone: guestPhone || undefined }),
+        }],
       }),
-    onSuccess: (booking) => {
-      toast.success(`Booking created — ${booking.ticketCode}`)
+    onSuccess: ({ bookings }) => {
+      toast.success(`Booking created — ${bookings[0].ticketCode}`)
       navigate(`/admin/bookings`)
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Booking failed'),
@@ -230,8 +236,10 @@ export function AdminNewBookingPage() {
               carType={trip.car.type}
               capacity={trip.car.capacity}
               takenSeats={seatData.taken}
-              selectedSeat={selectedSeat}
-              onSelectSeat={setSelectedSeat}
+              selectedSeats={selectedSeat ? [selectedSeat] : []}
+              onToggleSeat={(seat) => setSelectedSeat((prev) => (prev === seat ? null : seat))}
+              premiumSeatNumbers={trip.car.premiumSeatNumbers}
+              premiumSeatSurcharge={Number(trip.car.premiumSeatSurcharge)}
             />
           ) : (
             <p className="text-gray-400 text-sm">Loading seat map...</p>
@@ -384,36 +392,17 @@ export function AdminNewBookingPage() {
 
       {/* STEP 5 — Payment */}
       {isReadyToBook && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
           <h2 className="font-bold text-gray-900">
             <span className="inline-flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-bold mr-2">5</span>
             Payment Method
           </h2>
-          <div className="flex gap-3">
-            {(['CASH', 'PAYSTACK'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setPaymentMethod(m)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
-                  paymentMethod === m
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-outline-variant text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {m === 'CASH' ? '💵 Cash' : '💳 Paystack'}
-              </button>
-            ))}
+          <div className="flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold border-2 border-primary bg-primary/10 text-primary text-center">
+            💵 Cash
           </div>
-          {paymentMethod === 'CASH' && (
-            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">
-              Booking will be marked as paid immediately. Collect cash before the passenger boards.
-            </p>
-          )}
-          {paymentMethod === 'PAYSTACK' && (
-            <p className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-xl">
-              Booking will be confirmed but marked as pending until payment is completed via Paystack.
-            </p>
-          )}
+          <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">
+            Booking will be marked as paid immediately. Collect cash before the passenger boards.
+          </p>
         </div>
       )}
 

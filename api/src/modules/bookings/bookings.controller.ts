@@ -32,6 +32,13 @@ export class BookingsController {
     return this.bookingsService.findByTicketCode(code);
   }
 
+  // Public because groupId is an opaque, unguessable token — same exposure model as ticket codes.
+  @Public()
+  @Get('group/:groupId')
+  findByGroupId(@Param('groupId') groupId: string) {
+    return this.bookingsService.findByGroupId(groupId);
+  }
+
   @ApiBearerAuth()
   @Get(':id')
   findOne(@Param('id') id: string) {

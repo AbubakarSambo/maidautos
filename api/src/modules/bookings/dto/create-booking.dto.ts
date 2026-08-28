@@ -1,30 +1,16 @@
-import { IsString, IsInt, IsOptional, IsEnum, IsEmail, Min } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsEnum, IsEmail, Min, ArrayMinSize, ArrayMaxSize, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
 
-export class CreateBookingDto {
-  @ApiProperty()
-  @IsString()
-  tripId: string;
-
+// One seat's worth of passenger info. Each seat in a multi-seat purchase gets its own
+// name/contact/next-of-kin, so the ticket for that seat reflects who's actually riding.
+export class PassengerInputDto {
   @ApiProperty()
   @IsInt()
   @Min(1)
   seatNumber: number;
 
-  @ApiProperty({ description: 'RouteStop ID for pickup' })
-  @IsString()
-  pickupStopId: string;
-
-  @ApiProperty({ description: 'RouteStop ID for dropoff' })
-  @IsString()
-  dropoffStopId: string;
-
-  @ApiProperty({ enum: PaymentMethod })
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
-
-  // Guest fields — required when not authenticated
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -40,7 +26,6 @@ export class CreateBookingDto {
   @IsString()
   guestPhone?: string;
 
-  // Next of kin — collected for all passengers as a safety contact
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -51,9 +36,34 @@ export class CreateBookingDto {
   @IsString()
   nokPhone?: string;
 
-  // Admin booking on behalf of a passenger
+  // Admin booking this specific seat on behalf of an existing registered passenger
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   passengerUserId?: string;
+}
+
+export class CreateBookingDto {
+  @ApiProperty()
+  @IsString()
+  tripId: string;
+
+  @ApiProperty({ description: 'RouteStop ID for pickup' })
+  @IsString()
+  pickupStopId: string;
+
+  @ApiProperty({ description: 'RouteStop ID for dropoff' })
+  @IsString()
+  dropoffStopId: string;
+
+  @ApiProperty({ enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
+
+  @ApiProperty({ type: [PassengerInputDto], description: 'One entry per seat being purchased together' })
+  @ValidateNested({ each: true })
+  @Type(() => PassengerInputDto)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  passengers: PassengerInputDto[];
 }

@@ -1,13 +1,20 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+import { ApiTags, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
-import { Public, CurrentUser, Roles } from '../../common';
+import { Public, CurrentUser } from '../../common';
+import { GoogleProfile } from './strategies/google.strategy';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -49,5 +56,30 @@ export class AuthController {
   @Get('me')
   getProfile(@CurrentUser() user: any) {
     return this.authService.getProfile(user.id);
+  }
+
+  // Kicks off the redirect to Google's consent screen — passport's google strategy
+  // handles the actual redirect, this handler body never runs.
+  @Public()
+  @ApiExcludeEndpoint()
+  @UseGuards(AuthGuard('google'))
+  @Get('google')
+  googleAuth() {}
+
+  // Google redirects back here after consent. On success we mint our own JWT and hand
+  // it to the frontend via a query param on a full-page redirect (this is a browser
+  // navigation, not an XHR call, so the token can't just be returned as JSON).
+  @Public()
+  @ApiExcludeEndpoint()
+  @UseGuards(AuthGuard('google'))
+  @Get('google/callback')
+  async googleAuthCallback(@Req() req: { user: GoogleProfile }, @Res() res: Response) {
+    const frontendUrl = this.configService.get<string>('resend.frontendUrl');
+    try {
+      const { accessToken } = await this.authService.loginWithGoogle(req.user);
+      res.redirect(`${frontendUrl}/auth/google/callback?token=${accessToken}`);
+    } catch {
+      res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+    }
   }
 }

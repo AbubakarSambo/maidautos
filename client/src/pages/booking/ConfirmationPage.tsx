@@ -16,12 +16,23 @@ export function ConfirmationPage() {
     enabled: !!ticketCode,
   })
 
+  // If this booking was part of a multi-seat purchase, load its siblings too so every
+  // seat in the group shows up on the confirmation page, not just the one we landed on.
+  const { data: groupBookings } = useQuery<Booking[]>({
+    queryKey: ['booking-group', booking?.groupId],
+    queryFn: () => bookingsApi.findByGroupId(booking!.groupId),
+    enabled: !!booking?.groupId,
+  })
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading ticket...</div>
   if (!booking) return <div className="min-h-screen flex items-center justify-center text-gray-500">Ticket not found</div>
 
+  const bookings = groupBookings && groupBookings.length > 0 ? groupBookings : [booking]
+  const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0)
   const from = booking.pickupStop.stop.name
   const to = booking.dropoffStop.stop.name
   const departure = formatDateTime(booking.trip.departureDateTime)
+  const seatNumbers = bookings.map((b) => b.seatNumber).sort((a, b) => a - b)
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
 
   return (
@@ -35,7 +46,7 @@ export function ConfirmationPage() {
             <CheckCircle className="w-9 h-9 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Booking Confirmed!</h1>
-          <p className="text-gray-500 mt-1">Your ticket has been issued</p>
+          <p className="text-gray-500 mt-1">{bookings.length > 1 ? `${bookings.length} tickets have been issued` : 'Your ticket has been issued'}</p>
         </div>
 
         {/* Ticket card */}
@@ -47,9 +58,27 @@ export function ConfirmationPage() {
                 <Bus className="w-5 h-5 text-[#ffb4a8]" />
                 <span className="font-bold text-lg">MaidAutos</span>
               </div>
-              <span className="text-[#ffb4a8] text-sm font-mono">{booking.ticketCode}</span>
+              {bookings.length === 1 ? (
+                <span className="text-[#ffb4a8] text-sm font-mono">{booking.ticketCode}</span>
+              ) : (
+                <span className="text-[#ffb4a8] text-sm font-mono">{bookings.length} tickets</span>
+              )}
             </div>
           </div>
+
+          {bookings.length > 1 && (
+            <div className="px-5 py-3 border-b border-gray-100 space-y-1.5">
+              {bookings.map((b) => {
+                const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName
+                return (
+                  <div key={b.id} className="flex items-center justify-between text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                    <span className="text-gray-600 font-mono">Seat {b.seatNumber} · {b.ticketCode}</span>
+                    {name && <span className="text-gray-500 font-medium">{name}</span>}
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {/* Route */}
           <div className="px-5 py-4 border-b border-gray-100">
@@ -73,16 +102,16 @@ export function ConfirmationPage() {
               <p className="font-semibold text-gray-900 text-sm">{departure}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Seat</p>
-              <p className="font-bold text-2xl text-primary">{booking.seatNumber}</p>
+              <p className="text-xs text-gray-400">{bookings.length > 1 ? 'Seats' : 'Seat'}</p>
+              <p className="font-bold text-2xl text-primary">{seatNumbers.join(', ')}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400">Vehicle</p>
               <p className="font-semibold text-gray-900 text-sm">{booking.trip.car.make} {booking.trip.car.model}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Amount</p>
-              <p className="font-semibold text-gray-900 text-sm">{formatCurrency(booking.amount)}</p>
+              <p className="text-xs text-gray-400">{bookings.length > 1 ? 'Total Amount' : 'Amount'}</p>
+              <p className="font-semibold text-gray-900 text-sm">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
 

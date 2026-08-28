@@ -10,21 +10,26 @@ export const bookingsApi = {
   findByTicketCode: (code: string) =>
     apiClient.get(`/bookings/ticket/${code}`).then((r) => r.data.data),
 
+  findByGroupId: (groupId: string) =>
+    apiClient.get(`/bookings/group/${groupId}`).then((r) => r.data.data),
+
   findOne: (id: string) =>
     apiClient.get(`/bookings/${id}`).then((r) => r.data.data),
 
   create: (data: {
     tripId: string
-    seatNumber: number
     pickupStopId: string
     dropoffStopId: string
     paymentMethod: 'PAYSTACK' | 'CASH'
-    guestName?: string
-    guestEmail?: string
-    guestPhone?: string
-    nokName?: string
-    nokPhone?: string
-    passengerUserId?: string
+    passengers: {
+      seatNumber: number
+      guestName?: string
+      guestEmail?: string
+      guestPhone?: string
+      nokName?: string
+      nokPhone?: string
+      passengerUserId?: string
+    }[]
   }) => apiClient.post('/bookings', data).then((r) => r.data.data),
 
   cancel: (id: string) =>

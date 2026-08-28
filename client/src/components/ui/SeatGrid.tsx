@@ -1,26 +1,42 @@
-import { cn, getSeatLayout } from '@/lib/utils'
+import { cn, formatCurrency, getSeatLayout } from '@/lib/utils'
 import type { CarType } from '@/types'
 
 interface Props {
   carType: CarType
   capacity: number
   takenSeats: number[]
-  selectedSeat: number | null
-  onSelectSeat: (seat: number) => void
+  selectedSeats: number[]
+  onToggleSeat: (seat: number) => void
   readOnly?: boolean
+  premiumSeatNumbers?: number[]
+  premiumSeatSurcharge?: number
 }
 
-export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelectSeat, readOnly }: Props) {
+export function SeatGrid({
+  carType,
+  capacity,
+  takenSeats,
+  selectedSeats,
+  onToggleSeat,
+  readOnly,
+  premiumSeatNumbers = [],
+  premiumSeatSurcharge = 0,
+}: Props) {
   const layout = getSeatLayout(carType, capacity)
   const hasInlineDriver = layout.rows.some((row) => row.includes('driver'))
 
   return (
     <div className="select-none">
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-gray-600">
+      <div className="flex items-center gap-4 mb-4 text-xs text-gray-600 flex-wrap">
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-gray-100 border border-gray-300" /> Available</div>
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-primary" /> Selected</div>
         <div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded bg-gray-400" /> Taken</div>
+        {premiumSeatNumbers.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded bg-gray-100 border-2 border-amber-400" /> Premium (+{formatCurrency(premiumSeatSurcharge)})
+          </div>
+        )}
       </div>
 
       {/* Front label — only shown when the driver isn't already placed inline in the grid */}
@@ -54,22 +70,31 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
               }
 
               const isTaken = takenSeats.includes(seat)
-              const isSelected = selectedSeat === seat
+              const isSelected = selectedSeats.includes(seat)
+              const isPremium = premiumSeatNumbers.includes(seat)
 
               return (
                 <button
                   key={colIdx}
                   disabled={isTaken || readOnly}
-                  onClick={() => !isTaken && !readOnly && onSelectSeat(seat)}
+                  onClick={() => !isTaken && !readOnly && onToggleSeat(seat)}
                   className={cn(
                     'w-8 h-8 rounded text-xs font-medium transition-all border',
                     isTaken
                       ? 'bg-gray-400 border-gray-400 text-white cursor-not-allowed'
                       : isSelected
                       ? 'bg-primary border-primary text-white scale-105 shadow-sm'
+                      : isPremium
+                      ? 'bg-gray-100 border-2 border-amber-400 text-gray-700 hover:bg-surface-rose cursor-pointer'
                       : 'bg-gray-100 border-gray-300 text-gray-700 hover:border-primary/40 hover:bg-surface-rose cursor-pointer'
                   )}
-                  title={isTaken ? `Seat ${seat} — Booked` : `Seat ${seat}`}
+                  title={
+                    isTaken
+                      ? `Seat ${seat} — Booked`
+                      : isPremium
+                      ? `Seat ${seat} — Premium (+${formatCurrency(premiumSeatSurcharge)})`
+                      : `Seat ${seat}`
+                  }
                 >
                   {seat}
                 </button>
@@ -79,8 +104,12 @@ export function SeatGrid({ carType, capacity, takenSeats, selectedSeat, onSelect
         ))}
       </div>
 
-      {selectedSeat && (
-        <p className="text-center text-sm text-primary font-medium mt-3">Seat {selectedSeat} selected</p>
+      {selectedSeats.length > 0 && (
+        <p className="text-center text-sm text-primary font-medium mt-3">
+          {selectedSeats.length === 1
+            ? `Seat ${selectedSeats[0]} selected`
+            : `${selectedSeats.length} seats selected: ${[...selectedSeats].sort((a, b) => a - b).join(', ')}`}
+        </p>
       )}
     </div>
   )

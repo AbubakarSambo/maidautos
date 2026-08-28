@@ -82,22 +82,43 @@ export function SearchPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const appliedIncomingParams = useRef(false)
 
-  const { data: stops = [] } = useQuery<Stop[]>({
+  // Stops that can be a valid pickup point (From options).
+  const { data: fromStops = [] } = useQuery<Stop[]>({
+    queryKey: ['stops', 'active'],
+    queryFn: stopsApi.findActive,
+  })
+
+  // Stops reachable from the selected pickup (To options) — depends on `from`.
+  const { data: toStops = [], isFetching: isFetchingToStops } = useQuery<Stop[]>({
+    queryKey: ['stops', 'destinations', from],
+    queryFn: () => stopsApi.findDestinationsFrom(from),
+    enabled: !!from,
+  })
+
+  // If the previously selected destination is no longer reachable from the new
+  // pickup (or no pickup is selected), clear it rather than leave a stale value.
+  // Skipped while toStops is (re)fetching so an in-flight query param match isn't clobbered.
+  useEffect(() => {
+    if (isFetchingToStops) return
+    if (to && (!from || !toStops.some((s) => s.id === to))) setTo('')
+  }, [toStops, to, from, isFetchingToStops])
+
+  // All stops, used only to resolve external-link query params (?from=Abuja&to=Kaduna&date=...) by name.
+  const { data: allStops = [] } = useQuery<Stop[]>({
     queryKey: ['stops'],
     queryFn: stopsApi.findAll,
   })
 
-  // Carry From/To/Date over from external links (?from=Abuja&to=Kaduna&date=...)
   useEffect(() => {
-    if (appliedIncomingParams.current || stops.length === 0) return
+    if (appliedIncomingParams.current || allStops.length === 0) return
     appliedIncomingParams.current = true
 
     const fromName = searchParams.get('from')
     const toName = searchParams.get('to')
     const dateParam = searchParams.get('date')
 
-    const matchedFrom = fromName ? stops.find((s) => s.name.toLowerCase() === fromName.toLowerCase()) : undefined
-    const matchedTo = toName ? stops.find((s) => s.name.toLowerCase() === toName.toLowerCase()) : undefined
+    const matchedFrom = fromName ? allStops.find((s) => s.name.toLowerCase() === fromName.toLowerCase()) : undefined
+    const matchedTo = toName ? allStops.find((s) => s.name.toLowerCase() === toName.toLowerCase()) : undefined
 
     if (matchedFrom) setFrom(matchedFrom.id)
     if (matchedTo) setTo(matchedTo.id)
@@ -109,7 +130,7 @@ export function SearchPage() {
         document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })
       })
     }
-  }, [stops, searchParams])
+  }, [allStops, searchParams])
 
   const { data: results = [], isLoading } = useQuery<Trip[]>({
     queryKey: ['trips-search', from, to, date],
@@ -220,7 +241,7 @@ export function SearchPage() {
                     value={from}
                     onChange={setFrom}
                     placeholder="Select departure"
-                    options={stops.map((s) => ({ value: s.id, label: s.name }))}
+                    options={fromStops.map((s) => ({ value: s.id, label: s.name }))}
                     className="w-full bg-transparent p-0 text-on-surface font-semibold text-sm"
                   />
                 </div>
@@ -233,8 +254,8 @@ export function SearchPage() {
                   <Select
                     value={to}
                     onChange={setTo}
-                    placeholder="Select destination"
-                    options={stops.filter((s) => s.id !== from).map((s) => ({ value: s.id, label: s.name }))}
+                    placeholder={from ? 'Select destination' : 'Select departure first'}
+                    options={toStops.map((s) => ({ value: s.id, label: s.name }))}
                     className="w-full bg-transparent p-0 text-on-surface font-semibold text-sm"
                   />
                 </div>

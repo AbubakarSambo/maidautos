@@ -18,7 +18,7 @@ export class PaystackService {
     this.callbackUrl = this.configService.get<string>('paystack.callbackUrl');
   }
 
-  async initializePayment(bookingId: string, email: string, amountKobo: number) {
+  async initializePayment(groupId: string, email: string, amountKobo: number) {
     const reference = `MAD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const response = await fetch(`${this.baseUrl}/transaction/initialize`, {
@@ -31,8 +31,8 @@ export class PaystackService {
         email,
         amount: amountKobo,
         reference,
-        callback_url: `${this.callbackUrl}?bookingId=${bookingId}`,
-        metadata: { bookingId },
+        callback_url: `${this.callbackUrl}?groupId=${groupId}`,
+        metadata: { groupId },
       }),
     });
 
@@ -40,7 +40,7 @@ export class PaystackService {
     if (!data.status) throw new BadRequestException(data.message || 'Payment initialization failed');
 
     await this.bookingsService.attachPaystackReference(
-      bookingId,
+      groupId,
       reference,
       data.data.access_code,
       data.data.authorization_url,
@@ -59,7 +59,7 @@ export class PaystackService {
     // Normally the webhook confirms payment asynchronously, but it may not have
     // arrived yet by the time the customer's browser returns from Paystack — so
     // confirm synchronously here too (idempotent) and hand back the ticket code.
-    let booking: { ticketCode: string; id: string } | null = null;
+    let booking: { ticketCode: string; id: string; groupId: string } | null = null;
     if (data.data.status === 'success') {
       try {
         booking = await this.bookingsService.confirmPaystackPayment(reference);
@@ -68,7 +68,12 @@ export class PaystackService {
       }
     }
 
-    return { ...data.data, ticketCode: booking?.ticketCode ?? null, bookingId: booking?.id ?? null };
+    return {
+      ...data.data,
+      ticketCode: booking?.ticketCode ?? null,
+      bookingId: booking?.id ?? null,
+      groupId: booking?.groupId ?? null,
+    };
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {

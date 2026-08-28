@@ -14,13 +14,13 @@ export class PaystackController {
   ) {}
 
   @Public()
-  @Post('initialize/:bookingId')
-  async initialize(@Param('bookingId') bookingId: string, @CurrentUser() user: any) {
-    const booking = await this.bookingsService.findOne(bookingId);
-    const email = user?.email || booking.guestEmail;
+  @Post('initialize/:groupId')
+  async initialize(@Param('groupId') groupId: string, @CurrentUser() user: any) {
+    const bookings = await this.bookingsService.findByGroupId(groupId);
+    const email = user?.email || bookings[0].guestEmail;
     if (!email) throw new Error('No email available for payment');
-    const amountKobo = Math.round(Number(booking.amount) * 100);
-    return this.paystackService.initializePayment(bookingId, email, amountKobo);
+    const totalAmountKobo = bookings.reduce((sum, b) => sum + Math.round(Number(b.amount) * 100), 0);
+    return this.paystackService.initializePayment(groupId, email, totalAmountKobo);
   }
 
   @Public()

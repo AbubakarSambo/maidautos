@@ -15,7 +15,16 @@ export function TripDetailPage() {
   const fromStopId = searchParams.get('from') || ''
   const toStopId = searchParams.get('to') || ''
 
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [selectedSeats, setSelectedSeats] = useState<number[]>([])
+  const MAX_SEATS_PER_BOOKING = 10
+
+  const toggleSeat = (seat: number) => {
+    setSelectedSeats((prev) => {
+      if (prev.includes(seat)) return prev.filter((s) => s !== seat)
+      if (prev.length >= MAX_SEATS_PER_BOOKING) return prev
+      return [...prev, seat]
+    })
+  }
 
   const { data: trip, isLoading } = useQuery<Trip>({
     queryKey: ['trip', id],
@@ -38,10 +47,14 @@ export function TripDetailPage() {
   const price = pickupStop && dropoffStop
     ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
     : 0
+  const premiumSeatNumbers = trip.car.premiumSeatNumbers
+  const premiumSeatSurcharge = Number(trip.car.premiumSeatSurcharge)
+  const seatPrice = (seat: number) => price + (premiumSeatNumbers.includes(seat) ? premiumSeatSurcharge : 0)
+  const totalPrice = selectedSeats.reduce((sum, seat) => sum + seatPrice(seat), 0)
 
   const handleContinue = () => {
-    if (!selectedSeat) return
-    navigate(`/booking/checkout?tripId=${trip.id}&seat=${selectedSeat}&pickup=${pickupStop?.id}&dropoff=${dropoffStop?.id}&amount=${price}`)
+    if (selectedSeats.length === 0) return
+    navigate(`/booking/checkout?tripId=${trip.id}&seats=${selectedSeats.join(',')}&pickup=${pickupStop?.id}&dropoff=${dropoffStop?.id}&amount=${totalPrice}`)
   }
 
   return (
@@ -82,23 +95,30 @@ export function TripDetailPage() {
 
         {/* Seat map */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-bold text-gray-900 mb-4">Choose a seat</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-900">Choose your seats</h3>
+            <span className="text-xs text-gray-400">Up to {MAX_SEATS_PER_BOOKING} per booking</span>
+          </div>
           <SeatGrid
             carType={trip.car.type}
             capacity={trip.car.capacity}
             takenSeats={seatData?.taken || []}
-            selectedSeat={selectedSeat}
-            onSelectSeat={setSelectedSeat}
+            selectedSeats={selectedSeats}
+            onToggleSeat={toggleSeat}
+            premiumSeatNumbers={premiumSeatNumbers}
+            premiumSeatSurcharge={premiumSeatSurcharge}
           />
         </div>
 
         {/* CTA */}
         <button
-          disabled={!selectedSeat}
+          disabled={selectedSeats.length === 0}
           onClick={handleContinue}
           className="w-full bg-primary hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg"
         >
-          {selectedSeat ? `Continue — Seat ${selectedSeat} · ${formatCurrency(price)}` : 'Select a seat to continue'}
+          {selectedSeats.length > 0
+            ? `Continue — ${selectedSeats.length} seat${selectedSeats.length > 1 ? 's' : ''} · ${formatCurrency(totalPrice)}`
+            : 'Select a seat to continue'}
         </button>
       </div>
     </div>

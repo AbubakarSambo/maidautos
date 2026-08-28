@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, ToggleLeft, ToggleRight, Plus, X, Trash2, Pencil, Check } from 'lucide-react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
@@ -141,10 +141,18 @@ export function AdminRoutesPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete route'),
   })
 
-  const { register, control, handleSubmit, reset, watch } = useForm<RouteForm>({
+  const { register, control, handleSubmit, reset, watch, setValue } = useForm<RouteForm>({
     defaultValues: { originStopId: '', destinationStopId: '', estimatedDurationMinutes: '', stops: [{ stopId: '', distanceFromOriginKm: '0', priceFromOrigin: '0' }] },
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'stops' })
+
+  const originId = watch('originStopId')
+
+  // The first stop row must always be the route's origin — otherwise the route ends up
+  // with no valid pickup point (see stops.service.ts findActive / trips.service.ts search).
+  useEffect(() => {
+    if (originId) setValue('stops.0.stopId', originId)
+  }, [originId, setValue])
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: routesApi.create,
@@ -158,11 +166,19 @@ export function AdminRoutesPage() {
   })
 
   const onSubmit = (d: RouteForm) => {
+    if (!d.stops.some((s) => s.stopId === d.destinationStopId)) {
+      toast.error('The destination stop must also appear as the last row in Route Stops')
+      return
+    }
+
     create({
       originStopId: d.originStopId,
       destinationStopId: d.destinationStopId,
       estimatedDurationMinutes: Number(d.estimatedDurationMinutes),
-      stops: d.stops.map((s, i) => ({
+      stops: [
+        { stopId: d.originStopId, distanceFromOriginKm: '0', priceFromOrigin: '0' } as RouteStopForm,
+        ...d.stops.slice(1),
+      ].map((s, i) => ({
         stopId: s.stopId,
         order: i,
         distanceFromOriginKm: Number(s.distanceFromOriginKm),
@@ -245,42 +261,54 @@ export function AdminRoutesPage() {
                 + Add stop
               </button>
             </div>
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-4">{index + 1}</span>
-                <Controller
-                  name={`stops.${index}.stopId`}
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select stop..."
-                      options={stops.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
-                      className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            {fields.map((field, index) => {
+              const isOriginRow = index === 0
+              return (
+                <div key={field.id} className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 w-4">{index + 1}</span>
+                  {isOriginRow ? (
+                    <div className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm bg-gray-50 text-gray-500">
+                      {stops.find((s) => s.id === originId)?.name ?? 'Select an origin above'} <span className="text-xs text-gray-400">(origin)</span>
+                    </div>
+                  ) : (
+                    <Controller
+                      name={`stops.${index}.stopId`}
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select stop..."
+                          options={stops.map((s) => ({ value: s.id, label: `${s.name} (${s.state})` }))}
+                          className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      )}
                     />
                   )}
-                />
-                <input
-                  {...register(`stops.${index}.distanceFromOriginKm`, { required: true })}
-                  type="number"
-                  placeholder="Distance (km)"
-                  className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                <input
-                  {...register(`stops.${index}.priceFromOrigin`, { required: true })}
-                  type="number"
-                  placeholder="Price (₦)"
-                  className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                {fields.length > 1 && (
-                  <button type="button" onClick={() => remove(index)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
+                  <input
+                    {...register(`stops.${index}.distanceFromOriginKm`, { required: true })}
+                    type="number"
+                    placeholder="Distance (km)"
+                    disabled={isOriginRow}
+                    className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                  />
+                  <input
+                    {...register(`stops.${index}.priceFromOrigin`, { required: true })}
+                    type="number"
+                    placeholder="Price (₦)"
+                    disabled={isOriginRow}
+                    className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
+                  />
+                  {fields.length > 1 && !isOriginRow && (
+                    <button type="button" onClick={() => remove(index)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  {isOriginRow && <div className="w-9" />}
+                </div>
+              )
+            })}
             {destinationId && !fields.some((f, i) => watch(`stops.${i}.stopId`) === destinationId) && (
               <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">Tip: the destination stop should also appear as the last row above, with its full-route price.</p>
             )}

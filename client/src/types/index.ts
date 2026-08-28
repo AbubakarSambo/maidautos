@@ -59,6 +59,8 @@ export interface Car {
   status: CarStatus
   photos: string[]
   notes: string | null
+  premiumSeatNumbers: number[]
+  premiumSeatSurcharge: number
 }
 
 export interface Driver {
@@ -114,6 +116,7 @@ export interface Booking {
   nokName: string | null
   nokPhone: string | null
   seatNumber: number
+  groupId: string
   pickupStopId: string
   dropoffStopId: string
   amount: number

@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsEnum, IsBoolean, IsOptional, Min, Max } from 'class-validator';
+import { IsString, IsInt, IsEnum, IsBoolean, IsOptional, IsNumber, Min, Max, ArrayUnique } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CarType } from '@prisma/client';
 
@@ -39,4 +39,17 @@ export class CreateCarDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ type: [Number], description: 'Seat numbers on this car that cost extra' })
+  @IsOptional()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @ArrayUnique()
+  premiumSeatNumbers?: number[];
+
+  @ApiPropertyOptional({ description: 'Extra amount (₦) charged per premium seat' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  premiumSeatSurcharge?: number;
 }

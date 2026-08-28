@@ -69,6 +69,7 @@ model User {
   email           String?  @unique
   phone           String?  @unique
   passwordHash    String?  @map("password_hash")
+  googleId        String?  @unique @map("google_id")
   firstName       String   @map("first_name")
   lastName        String   @map("last_name")
   role            UserRole @default(PASSENGER)
@@ -173,6 +174,9 @@ model Car {
   status      CarStatus @default(ACTIVE)
   photos      String[]
   notes       String?
+  // Seat numbers (per this car's layout) that cost extra — e.g. front-row/legroom seats.
+  premiumSeatNumbers   Int[]   @default([]) @map("premium_seat_numbers")
+  premiumSeatSurcharge Decimal @default(0) @db.Decimal(10, 2) @map("premium_seat_surcharge")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -258,9 +262,13 @@ model Booking {
   pickupStopId       String        @map("pickup_stop_id")
   dropoffStopId      String        @map("dropoff_stop_id")
   amount             Decimal       @db.Decimal(10, 2)
+  // Bookings created together in one multi-seat purchase share a groupId, so they can be
+  // paid for with a single Paystack charge and shown together on the confirmation page.
+  groupId            String        @map("group_id")
   paymentMethod      PaymentMethod @map("payment_method")
   paymentStatus      PaymentStatus @default(PENDING) @map("payment_status")
-  paystackReference  String?       @unique @map("paystack_reference")
+  // No longer @unique — every booking in a group shares the same reference once payment is initialized.
+  paystackReference  String?       @map("paystack_reference")
   paystackAccessCode String?       @map("paystack_access_code")
   paymentUrl         String?       @map("payment_url")
   ticketCode         String        @unique @map("ticket_code")
@@ -279,5 +287,7 @@ model Booking {
   @@index([tripId])
   @@index([userId])
   @@index([ticketCode])
+  @@index([groupId])
+  @@index([paystackReference])
   @@map("bookings")
 }

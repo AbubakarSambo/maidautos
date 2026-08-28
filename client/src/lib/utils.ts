@@ -37,7 +37,8 @@ export function getSeatLayout(carType: CarType, capacity: number): SeatLayout {
       // Toyota Sienna typical layout varies by capacity
       // 6-seat: driver front-left (not bookable), 1 front-right, 2 middle, 3 back
       if (capacity <= 6) return { rows: [['driver', null, 1], [2, null, 3], [4, 5, 6]] }
-      if (capacity === 7) return { rows: [['driver', null, 1], [2, null, 3], [4, 5, 6], [7, null, null]] }
+      // 7-seat: driver + 1 front, 3 middle, 3 back
+      if (capacity === 7) return { rows: [['driver', null, 1], [2, 3, 4], [5, 6, 7]] }
       // 8-seat: driver + 1 front, 2 middle, 2 middle, 3 back
       return { rows: [['driver', null, 1], [2, null, 3], [4, null, 5], [6, 7, 8]] }
     }

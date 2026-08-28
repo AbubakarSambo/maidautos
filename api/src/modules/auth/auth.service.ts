@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto, LoginDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { TokenType } from '@prisma/client';
+import { GoogleProfile } from './strategies/google.strategy';
 
 @Injectable()
 export class AuthService {
@@ -74,6 +75,42 @@ export class AuthService {
 
     // Catch any guest bookings made under this email since the last login/verification
     // (e.g. the passenger booked as a guest again without noticing they were logged out).
+    this.linkGuestBookings(user.id, user.email).catch(() => {});
+
+    return { accessToken: this.generateToken(user), user: this.formatUser(user) };
+  }
+
+  // Finds the user by googleId, else links an existing account with the same (verified)
+  // email, else creates a new one. Google already verified the email, so unlike
+  // register(), no isEmailVerified/passwordHash setup is needed.
+  async loginWithGoogle(profile: GoogleProfile) {
+    const email = profile.email.toLowerCase();
+    let user = await this.prisma.user.findUnique({ where: { googleId: profile.googleId } });
+
+    if (!user) {
+      const existingByEmail = await this.prisma.user.findUnique({ where: { email } });
+      if (existingByEmail) {
+        if (!existingByEmail.isActive) throw new UnauthorizedException('This account has been deactivated');
+        user = await this.prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: { googleId: profile.googleId, isEmailVerified: true },
+        });
+      } else {
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            googleId: profile.googleId,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            role: 'PASSENGER',
+            isEmailVerified: true,
+          },
+        });
+      }
+    } else if (!user.isActive) {
+      throw new UnauthorizedException('This account has been deactivated');
+    }
+
     this.linkGuestBookings(user.id, user.email).catch(() => {});
 
     return { accessToken: this.generateToken(user), user: this.formatUser(user) };
