@@ -6,7 +6,7 @@ import { tripsApi } from '@/api'
 import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
 import { BookingSteps } from '@/components/shared'
-import { formatDateTime, formatDuration, formatCurrency } from '@/lib/utils'
+import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
 
 export function TripDetailPage() {
   const { id } = useParams<{ id: string }>()
