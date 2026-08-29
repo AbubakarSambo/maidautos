@@ -7,6 +7,7 @@ import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
 import { BookingSteps } from '@/components/shared'
 import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
+import { posthog } from '@/lib/posthog'
 
 export function TripDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -52,6 +53,12 @@ export function TripDetailPage() {
 
   const handleContinue = () => {
     if (selectedSeats.length === 0) return
+    posthog.capture('checkout_started', {
+      trip_id: trip.id,
+      seat_count: selectedSeats.length,
+      seats: selectedSeats,
+      amount: totalPrice,
+    })
     navigate(`/booking/checkout?tripId=${trip.id}&seats=${selectedSeats.join(',')}&pickup=${pickupStop?.id}&dropoff=${dropoffStop?.id}&amount=${totalPrice}`)
   }
 

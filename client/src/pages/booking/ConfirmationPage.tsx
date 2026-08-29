@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle, Share2, Bus, Ticket } from 'lucide-react'
@@ -5,6 +6,7 @@ import { bookingsApi } from '@/api'
 import { BookingSteps } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTime, formatCurrency, getWhatsAppShareUrl } from '@/lib/utils'
+import { posthog } from '@/lib/posthog'
 import type { Booking } from '@/types'
 
 export function ConfirmationPage() {
@@ -26,11 +28,25 @@ export function ConfirmationPage() {
     enabled: !!booking?.groupId,
   })
 
+  const capturedRef = useRef(false)
+
+  const bookings = booking ? (groupBookings && groupBookings.length > 0 ? groupBookings : [booking]) : []
+  const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0)
+
+  useEffect(() => {
+    if (capturedRef.current || !booking) return
+    capturedRef.current = true
+    posthog.capture('booking_completed', {
+      trip_id: booking.tripId,
+      group_id: booking.groupId,
+      ticket_code: booking.ticketCode,
+      seat_count: bookings.length,
+      revenue: totalAmount,
+    })
+  }, [booking, bookings.length, totalAmount])
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading ticket...</div>
   if (!booking) return <div className="min-h-screen flex items-center justify-center text-gray-500">Ticket not found</div>
-
-  const bookings = groupBookings && groupBookings.length > 0 ? groupBookings : [booking]
-  const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0)
   const from = booking.pickupStop.stop.name
   const to = booking.dropoffStop.stop.name
   const departure = formatDateTime(booking.trip.departureDateTime)

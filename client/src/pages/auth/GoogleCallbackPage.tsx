@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import { posthog } from '@/lib/posthog'
 import { toast } from 'sonner'
 
 export function GoogleCallbackPage() {
@@ -30,6 +31,7 @@ export function GoogleCallbackPage() {
       .getProfile()
       .then((user) => {
         setAuth(user, token)
+        posthog.capture('login', { method: 'google' })
         navigate(user.role === 'PASSENGER' ? '/' : '/admin', { replace: true })
       })
       .catch(() => {

@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi } from '@/api'
 import { toast } from 'sonner'
 import { AuthShell } from '@/components/layout'
+import { posthog } from '@/lib/posthog'
 
 const schema = z.object({
   firstName: z.string().min(2),
@@ -27,6 +28,7 @@ export function RegisterPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: authApi.register,
     onSuccess: (_, vars) => {
+      posthog.capture('sign_up', { method: 'password' })
       toast.success('Account created! Please check your email to verify.')
       navigate(`/check-email?email=${encodeURIComponent(vars.email)}`)
     },

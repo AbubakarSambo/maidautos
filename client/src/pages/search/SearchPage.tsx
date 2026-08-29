@@ -10,6 +10,7 @@ import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
 import { Select } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
+import { posthog } from '@/lib/posthog'
 import type { Stop, Trip } from '@/types'
 
 const FEATURES = [
@@ -145,6 +146,12 @@ export function SearchPage() {
     e.preventDefault()
     if (!from || !to || from === to) return
     setSearched(true)
+    posthog.capture('trip_search', {
+      from_stop_id: from,
+      to_stop_id: to,
+      date,
+      passengers,
+    })
     // Wait a frame so the (conditionally rendered) results section has mounted before scrolling to it.
     requestAnimationFrame(() => {
       document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' })
@@ -375,7 +382,15 @@ export function SearchPage() {
                   return (
                     <div
                       key={trip.id}
-                      onClick={() => navigate(`/trips/${trip.id}?from=${from}&to=${to}`)}
+                      onClick={() => {
+                        posthog.capture('trip_selected', {
+                          trip_id: trip.id,
+                          from_stop_id: from,
+                          to_stop_id: to,
+                          price,
+                        })
+                        navigate(`/trips/${trip.id}?from=${from}&to=${to}`)
+                      }}
                       className="bg-surface rounded-xl border border-outline-variant p-5 cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                     >
                       <div className="flex items-center justify-between mb-3">

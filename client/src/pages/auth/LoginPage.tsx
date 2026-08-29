@@ -7,6 +7,7 @@ import { authApi, googleLoginUrl } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from 'sonner'
 import { AuthShell } from '@/components/layout'
+import { posthog } from '@/lib/posthog'
 
 const schema = z.object({
   email: z.string().email(),
@@ -23,6 +24,7 @@ export function LoginPage() {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       setAuth(data.user, data.accessToken)
+      posthog.capture('login', { method: 'password' })
       const dest = data.user.role === 'PASSENGER' ? '/' : '/admin'
       navigate(dest, { replace: true })
     },

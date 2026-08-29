@@ -7,6 +7,7 @@ import { bookingsApi, paystackApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { BookingSteps } from '@/components/shared'
 import { formatCurrency } from '@/lib/utils'
+import { posthog } from '@/lib/posthog'
 import { toast } from 'sonner'
 
 type PassengerForm = {
@@ -76,18 +77,42 @@ export function CheckoutPage() {
         })),
       }),
     onSuccess: async ({ groupId }) => {
+      posthog.capture('booking_submitted', {
+        trip_id: tripId,
+        seat_count: seatNumbers.length,
+        amount,
+        group_id: groupId,
+      })
       try {
         const { authorizationUrl } = await paystackApi.initialize(groupId)
         if (authorizationUrl) {
+          posthog.capture('payment_initiated', {
+            trip_id: tripId,
+            seat_count: seatNumbers.length,
+            amount,
+            group_id: groupId,
+          })
           window.location.href = authorizationUrl
         } else {
+          posthog.capture('payment_init_failed', { trip_id: tripId, group_id: groupId, reason: 'no_authorization_url' })
           toast.error('Could not start payment — please try again')
         }
       } catch (err: any) {
+        posthog.capture('payment_init_failed', {
+          trip_id: tripId,
+          group_id: groupId,
+          reason: err?.response?.data?.message || 'unknown_error',
+        })
         toast.error(err?.response?.data?.message || 'Could not start payment — please try again')
       }
     },
     onError: (err: any) => {
+      posthog.capture('booking_failed', {
+        trip_id: tripId,
+        seat_count: seatNumbers.length,
+        amount,
+        reason: err?.response?.data?.message || 'unknown_error',
+      })
       toast.error(err?.response?.data?.message || 'Booking failed')
     },
   })
