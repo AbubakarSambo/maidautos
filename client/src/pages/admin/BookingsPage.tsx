@@ -34,7 +34,10 @@ export function AdminBookingsPage() {
       b.guestName?.toLowerCase().includes(q) ||
       b.user?.firstName?.toLowerCase().includes(q) ||
       b.user?.lastName?.toLowerCase().includes(q) ||
-      b.guestPhone?.includes(q)
+      b.guestPhone?.includes(q) ||
+      b.user?.phone?.includes(q) ||
+      b.guestEmail?.toLowerCase().includes(q) ||
+      b.user?.email?.toLowerCase().includes(q)
     )
   })
 
@@ -78,6 +81,8 @@ export function AdminBookingsPage() {
         <div className="space-y-2">
           {filtered.map((b) => {
             const passengerName = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Guest'
+            const passengerEmail = b.user?.email || b.guestEmail
+            const passengerPhone = b.user?.phone || b.guestPhone
             return (
               <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -86,6 +91,13 @@ export function AdminBookingsPage() {
                       <span className="font-bold text-gray-900">{passengerName}</span>
                       <span className="text-xs text-gray-400 font-mono">{b.ticketCode}</span>
                     </div>
+                    {(passengerEmail || passengerPhone) && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                        {passengerEmail && <span>{passengerEmail}</span>}
+                        {passengerEmail && passengerPhone && <span>·</span>}
+                        {passengerPhone && <span>{passengerPhone}</span>}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-1">
                       <span>{b.pickupStop.stop.name}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
