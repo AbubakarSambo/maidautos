@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { Public, Roles, CurrentUser } from '../../common';
+import { Public, OptionalAuth, Roles, CurrentUser } from '../../common';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -46,7 +46,7 @@ export class BookingsController {
   }
 
   // Handles authenticated + guest bookings (no @ApiBearerAuth guard, auth is optional)
-  @Public()
+  @OptionalAuth()
   @Post()
   create(@Body() dto: CreateBookingDto, @CurrentUser() user: any) {
     return this.bookingsService.create(dto, user);

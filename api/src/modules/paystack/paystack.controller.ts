@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, Headers, RawBodyRequest, Req } from
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PaystackService } from './paystack.service';
-import { Public, CurrentUser } from '../../common';
+import { Public, OptionalAuth, CurrentUser } from '../../common';
 import { BookingsService } from '../bookings/bookings.service';
 
 @ApiTags('Paystack')
@@ -13,7 +13,7 @@ export class PaystackController {
     private bookingsService: BookingsService,
   ) {}
 
-  @Public()
+  @OptionalAuth()
   @Post('initialize/:groupId')
   async initialize(@Param('groupId') groupId: string, @CurrentUser() user: any) {
     const bookings = await this.bookingsService.findByGroupId(groupId);

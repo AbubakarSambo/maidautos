@@ -131,6 +131,7 @@ export class TripsService {
 
     const trip = await this.prisma.trip.findUnique({
       where: { id },
+      relationLoadStrategy: 'join',
       include: {
         route: {
           include: {
