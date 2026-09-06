@@ -127,6 +127,8 @@ export class TripsService {
   }
 
   async findOne(id: string) {
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
+
     const trip = await this.prisma.trip.findUnique({
       where: { id },
       include: {
@@ -141,7 +143,10 @@ export class TripsService {
         driver: true,
         statusUpdates: { include: { stop: true, createdBy: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } },
         bookings: {
-          where: { status: { in: ['CONFIRMED', 'COMPLETED'] } },
+          where: {
+            status: { in: ['CONFIRMED', 'COMPLETED'] },
+            OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
+          },
           select: { seatNumber: true, pickupStopId: true, dropoffStopId: true, status: true, paymentStatus: true, createdAt: true },
         },
       },

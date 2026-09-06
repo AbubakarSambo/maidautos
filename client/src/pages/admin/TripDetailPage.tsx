@@ -78,8 +78,9 @@ export function AdminTripDetailPage() {
 
   const onSubmitEdit = (data: EditForm) => {
     const selectedCar = cars.find((c) => c.id === data.carId)
-    if (selectedCar && trip && selectedCar.capacity < (trip._count?.bookings ?? 0)) {
-      toast.error(`This car only has ${selectedCar.capacity} seats — this trip already has ${trip._count?.bookings} booking(s)`)
+    const bookingCount = trip?.bookings?.length ?? 0
+    if (selectedCar && trip && selectedCar.capacity < bookingCount) {
+      toast.error(`This car only has ${selectedCar.capacity} seats — this trip already has ${bookingCount} booking(s)`)
       return
     }
     saveEdit(data)
@@ -286,7 +287,7 @@ export function AdminTripDetailPage() {
             <Plus className="w-3 h-3" /> Add booking
           </button>
         </div>
-        <p className="text-gray-500 text-sm">{trip._count?.bookings ?? 0} bookings · {trip.car.capacity - (trip._count?.bookings ?? 0)} seats left</p>
+        <p className="text-gray-500 text-sm">{trip.bookings?.length ?? 0} bookings · {trip.car.capacity - (trip.bookings?.length ?? 0)} seats left</p>
       </div>
     </div>
   )
