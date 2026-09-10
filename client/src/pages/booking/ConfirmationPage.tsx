@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, Share2, Bus, Ticket } from 'lucide-react'
+import { CheckCircle, Share2, Bus, Ticket, Printer } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { BookingSteps } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
@@ -12,6 +12,8 @@ import type { Booking } from '@/types'
 export function ConfirmationPage() {
   const { ticketCode } = useParams<{ ticketCode: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const autoPrint = searchParams.get('print') === '1'
   const { isAuthenticated } = useAuthStore()
 
   const { data: booking, isLoading } = useQuery<Booking>({
@@ -54,11 +56,14 @@ export function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <BookingSteps current={2} />
+      <AutoPrint enabled={autoPrint} />
+      <div className="print:hidden">
+        <BookingSteps current={2} />
+      </div>
       <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-sm w-full space-y-4">
         {/* Success badge */}
-        <div className="text-center">
+        <div className="text-center print:hidden">
           <div className="w-16 h-16 bg-green-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
             <CheckCircle className="w-9 h-9 text-primary" />
           </div>
@@ -131,7 +136,7 @@ export function ConfirmationPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 print:hidden">
           <a
             href={whatsappUrl}
             target="_blank"
@@ -140,17 +145,23 @@ export function ConfirmationPage() {
           >
             <Share2 className="w-4 h-4" /> Share via WhatsApp
           </a>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50"
+          >
+            <Printer className="w-4 h-4" /> Print
+          </button>
         </div>
 
         {isAuthenticated ? (
           <Link
             to="/account/bookings"
-            className="w-full flex items-center justify-center gap-2 bg-primary hover:brightness-110 text-white py-3 rounded-xl font-bold text-sm shadow-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:brightness-110 text-white py-3 rounded-xl font-bold text-sm shadow-lg transition-colors print:hidden"
           >
             <Ticket className="w-4 h-4" /> View My Trips
           </Link>
         ) : (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center print:hidden">
             <p className="text-xs text-gray-600">Save this trip to your account so you can find it later.</p>
             <button
               onClick={() => navigate(booking.guestEmail ? `/register?email=${encodeURIComponent(booking.guestEmail)}` : '/register')}
@@ -163,7 +174,7 @@ export function ConfirmationPage() {
 
         <button
           onClick={() => navigate('/')}
-          className="w-full text-center text-sm text-gray-500 hover:text-gray-700"
+          className="w-full text-center text-sm text-gray-500 hover:text-gray-700 print:hidden"
         >
           Back to home
         </button>
@@ -171,6 +182,17 @@ export function ConfirmationPage() {
       </div>
     </div>
   )
+}
+
+function AutoPrint({ enabled }: { enabled: boolean }) {
+  const printedRef = useRef(false)
+  useEffect(() => {
+    if (!enabled || printedRef.current) return
+    printedRef.current = true
+    const timer = setTimeout(() => window.print(), 300)
+    return () => clearTimeout(timer)
+  }, [enabled])
+  return null
 }
 
 function TicketField({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {

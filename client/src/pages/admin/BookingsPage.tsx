@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle, Printer } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -124,6 +124,12 @@ export function AdminBookingsPage() {
                         <CheckCircle className="w-3.5 h-3.5" /> Mark Paid
                       </button>
                     )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); window.open(`/booking/confirmation/${b.ticketCode}?print=1`, '_blank') }}
+                      className="flex items-center gap-1 text-xs text-gray-500 font-semibold hover:underline"
+                    >
+                      <Printer className="w-3.5 h-3.5" /> Print
+                    </button>
                   </div>
                 </div>
               </div>
