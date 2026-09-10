@@ -53,6 +53,7 @@ export function ConfirmationPage() {
   const to = booking.dropoffStop.stop.name
   const departure = formatDateTime(booking.trip.departureDateTime)
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
+  const passengerName = booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : booking.guestName || 'Guest'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -61,7 +62,7 @@ export function ConfirmationPage() {
       <div className="print:hidden">
         <BookingSteps current={2} />
       </div>
-      <ThermalReceipt bookings={bookings} totalAmount={totalAmount} from={from} to={to} departure={departure} />
+      <ThermalReceipt bookings={bookings} totalAmount={totalAmount} from={from} to={to} departure={departure} passengerName={passengerName} />
       <div className="flex-1 flex items-center justify-center p-4 print:hidden">
       <div className="max-w-sm w-full space-y-4">
         {/* Success badge */}
@@ -196,22 +197,26 @@ function ThermalReceipt({
   from,
   to,
   departure,
+  passengerName,
 }: {
   bookings: Booking[]
   totalAmount: number
   from: string
   to: string
   departure: string
+  passengerName: string
 }) {
   const first = bookings[0]
   if (!first) return null
   return (
     <div className="hidden print:block font-mono text-black" style={{ width: '76mm', margin: '0 auto', padding: '2mm 0' }}>
       <div className="text-center">
+        <img src="/logo.png" alt="MaidAutos" className="h-10 w-auto mx-auto mb-1" style={{ filter: 'grayscale(1) contrast(1.4)' }} />
         <p className="font-bold text-sm">MAID AUTOS LIMITED</p>
         <p className="text-xs">PASSENGER TICKET</p>
       </div>
       <div className="border-t border-dashed border-black my-2" />
+      <ReceiptLine label="Passenger" value={passengerName} />
       <ReceiptLine label="Date" value={departure} />
       <ReceiptLine label="Vehicle No" value={first.trip.car.plateNumber} />
       <ReceiptLine label="From" value={from} />
