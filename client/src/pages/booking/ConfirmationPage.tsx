@@ -56,14 +56,16 @@ export function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <style>{`@media print { @page { size: 80mm auto; margin: 0; } }`}</style>
       <AutoPrint enabled={autoPrint} />
       <div className="print:hidden">
         <BookingSteps current={2} />
       </div>
-      <div className="flex-1 flex items-center justify-center p-4">
+      <ThermalReceipt bookings={bookings} totalAmount={totalAmount} from={from} to={to} departure={departure} />
+      <div className="flex-1 flex items-center justify-center p-4 print:hidden">
       <div className="max-w-sm w-full space-y-4">
         {/* Success badge */}
-        <div className="text-center print:hidden">
+        <div className="text-center">
           <div className="w-16 h-16 bg-green-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
             <CheckCircle className="w-9 h-9 text-primary" />
           </div>
@@ -180,6 +182,58 @@ export function ConfirmationPage() {
         </button>
       </div>
       </div>
+    </div>
+  )
+}
+
+// Plain, monochrome layout sized for an 80mm thermal roll (Xprinter etc).
+// Thermal heads render solid color fills as noisy blocks and can't do the
+// rounded/shadowed on-screen ticket card, so this is a separate markup
+// shown only in print — the screen ticket stays hidden while printing.
+function ThermalReceipt({
+  bookings,
+  totalAmount,
+  from,
+  to,
+  departure,
+}: {
+  bookings: Booking[]
+  totalAmount: number
+  from: string
+  to: string
+  departure: string
+}) {
+  const first = bookings[0]
+  if (!first) return null
+  return (
+    <div className="hidden print:block font-mono text-black" style={{ width: '76mm', margin: '0 auto', padding: '2mm 0' }}>
+      <div className="text-center">
+        <p className="font-bold text-sm">MAID AUTOS LIMITED</p>
+        <p className="text-xs">PASSENGER TICKET</p>
+      </div>
+      <div className="border-t border-dashed border-black my-2" />
+      <ReceiptLine label="Date" value={departure} />
+      <ReceiptLine label="Vehicle No" value={first.trip.car.plateNumber} />
+      <ReceiptLine label="From" value={from} />
+      <ReceiptLine label="To" value={to} />
+      <div className="border-t border-dashed border-black my-2" />
+      {bookings.map((b) => (
+        <ReceiptLine key={b.id} label={`Seat ${b.seatNumber}`} value={b.ticketCode} />
+      ))}
+      <ReceiptLine label={bookings.length > 1 ? 'Total Amount' : 'Amount'} value={formatCurrency(totalAmount)} />
+      <ReceiptLine label="Payment" value={first.paymentStatus === 'PAID' ? 'PAID' : 'PENDING — pay before boarding'} />
+      <div className="border-t border-dashed border-black my-2" />
+      <p className="text-center text-xs font-bold">LUGGAGE AT OWNER'S RISK</p>
+      <p className="text-center text-[10px] mt-2">Thank you for riding with us</p>
+    </div>
+  )
+}
+
+function ReceiptLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-2 text-xs py-0.5">
+      <span>{label}</span>
+      <span className="font-bold text-right">{value}</span>
     </div>
   )
 }
