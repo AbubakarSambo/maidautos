@@ -209,9 +209,12 @@ function ThermalReceipt({
   const first = bookings[0]
   if (!first) return null
   return (
-    <div className="hidden print:block font-mono text-black" style={{ width: '76mm', margin: '0 auto', padding: '2mm 0' }}>
+    <div
+      className="hidden print:block font-mono text-black"
+      style={{ width: '72mm', maxWidth: '72mm', margin: '0 auto', padding: '2mm 4mm', boxSizing: 'border-box', overflowWrap: 'anywhere' }}
+    >
       <div className="text-center">
-        <img src="/logo.png" alt="MaidAutos" className="h-10 w-auto mx-auto mb-1" style={{ filter: 'grayscale(1) contrast(1.4)' }} />
+        <img src="/logo.png" alt="MaidAutos" className="h-10 w-auto max-w-full mx-auto mb-1" style={{ filter: 'grayscale(1) contrast(1.4)' }} />
         <p className="font-bold text-sm">MAID AUTOS LIMITED</p>
         <p className="text-xs">PASSENGER TICKET</p>
       </div>
@@ -237,8 +240,8 @@ function ThermalReceipt({
 function ReceiptLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 text-xs py-0.5">
-      <span>{label}</span>
-      <span className="font-bold text-right">{value}</span>
+      <span className="flex-shrink-0">{label}</span>
+      <span className="font-bold text-right break-words min-w-0">{value}</span>
     </div>
   )
 }
