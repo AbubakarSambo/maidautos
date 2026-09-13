@@ -70,7 +70,7 @@ export class TripsService {
           },
         },
       },
-      orderBy: { departureDateTime: 'asc' },
+      orderBy: { departureDateTime: 'desc' },
     });
   }
 
