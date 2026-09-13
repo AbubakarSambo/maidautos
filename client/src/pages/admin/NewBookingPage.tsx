@@ -43,8 +43,10 @@ export function AdminNewBookingPage() {
   const { data: allTrips = [] } = useQuery<Trip[]>({
     queryKey: ['admin-trips-for-booking', tripDate],
     queryFn: () =>
-      tripsApi.findAll({ date: tripDate, status: 'SCHEDULED' }).then((r) =>
-        Array.isArray(r) ? r : []
+      tripsApi.findAll({ date: tripDate }).then((r) =>
+        (Array.isArray(r) ? r : []).filter(
+          (t) => t.status === 'SCHEDULED' || t.status === 'BOARDING'
+        )
       ),
     enabled: !preselectedTripId,
   })
@@ -172,7 +174,7 @@ export function AdminNewBookingPage() {
                 className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {allTrips.length === 0 && tripDate && (
-                <p className="text-xs text-gray-400 mt-1">No scheduled trips on this date.</p>
+                <p className="text-xs text-gray-400 mt-1">No bookable trips on this date.</p>
               )}
             </div>
           </div>
