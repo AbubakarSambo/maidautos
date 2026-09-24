@@ -37,4 +37,7 @@ export const bookingsApi = {
 
   recordCashPayment: (id: string) =>
     apiClient.patch(`/bookings/${id}/record-payment`).then((r) => r.data.data),
+
+  reVerifyPayment: (id: string) =>
+    apiClient.post(`/paystack/re-verify/${id}`).then((r) => r.data.data),
 }

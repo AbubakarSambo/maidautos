@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle, Printer } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -21,6 +21,16 @@ export function AdminBookingsPage() {
   const { mutate: recordPayment } = useMutation({
     mutationFn: (id: string) => bookingsApi.recordCashPayment(id),
     onSuccess: () => { toast.success('Payment recorded'); qc.invalidateQueries({ queryKey: ['admin-bookings'] }) },
+  })
+
+  const { mutate: reVerifyPayment, isPending: isReVerifying } = useMutation({
+    mutationFn: (id: string) => bookingsApi.reVerifyPayment(id),
+    onSuccess: (data: any) => {
+      if (data?.status === 'success') toast.success('Payment confirmed and booking marked paid')
+      else toast.info(`Paystack reports this payment as "${data?.status ?? 'unknown'}" — still not paid`)
+      qc.invalidateQueries({ queryKey: ['admin-bookings'] })
+    },
+    onError: () => toast.error('Could not re-verify payment'),
   })
 
   const unpaidCashCount = bookings.filter((b) => b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING').length
@@ -122,6 +132,15 @@ export function AdminBookingsPage() {
                         className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Mark Paid
+                      </button>
+                    )}
+                    {b.paymentStatus === 'PENDING' && b.paymentMethod === 'PAYSTACK' && b.paystackReference && (
+                      <button
+                        disabled={isReVerifying}
+                        onClick={(e) => { e.stopPropagation(); reVerifyPayment(b.id) }}
+                        className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline disabled:opacity-50"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Re-verify
                       </button>
                     )}
                     <button
