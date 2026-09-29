@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
 import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
-import { Select } from '@/components/shared'
+import { Select, ContactForm } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
 import { posthog } from '@/lib/posthog'
 import type { Stop, Trip } from '@/types'
@@ -171,6 +171,7 @@ export function SearchPage() {
             <a href="#how-it-works" className="text-sm font-bold text-primary border-b-2 border-primary pb-1">How It Works</a>
             <Link to="/routes" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Routes</Link>
             <a href="#why-us" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Why Us</a>
+            <a href="#contact" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Contact</a>
             <div className="h-6 w-px bg-outline-variant" />
             {isAuthenticated ? (
               <>
@@ -221,6 +222,7 @@ export function SearchPage() {
             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold text-primary">How It Works</a>
             <Link to="/routes" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Routes</Link>
             <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Why Us</a>
+            <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Contact</a>
             <div className="h-px w-full bg-outline-variant" />
             {isAuthenticated ? (
               <>
@@ -566,6 +568,20 @@ export function SearchPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Contact ──────────────────────────────────────────────── */}
+      <section id="contact" className="py-24 px-6 bg-surface-container">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-primary text-sm font-bold uppercase tracking-widest mb-2">Get In Touch</p>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-on-surface">Have a question? Contact us</h2>
+            <p className="text-on-surface-variant mt-3 max-w-xl mx-auto">
+              Whether it's a booking issue, feedback, or a partnership inquiry — send us a message and we'll get back to you.
+            </p>
+          </div>
+          <ContactForm />
         </div>
       </section>
 
