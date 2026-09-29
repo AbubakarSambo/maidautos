@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
-import { ArrowLeft, Plus, Pencil, Snowflake, Wifi, UtensilsCrossed, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Snowflake, Wifi, UtensilsCrossed, MessageCircle, FileText } from 'lucide-react'
 import { tripsApi, carsApi, driversApi, bookingsApi } from '@/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -147,7 +147,13 @@ export function AdminTripDetailPage() {
         <button onClick={() => navigate('/admin/trips')} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">{trip.route.originStop.name} → {trip.route.destinationStop.name}</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex-1">{trip.route.originStop.name} → {trip.route.destinationStop.name}</h1>
+        <button
+          onClick={() => window.open(`/admin/trips/${trip.id}/manifest`, '_blank')}
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-xl px-3 py-2 hover:bg-gray-50"
+        >
+          <FileText className="w-3.5 h-3.5" /> Generate Manifest
+        </button>
       </div>
 
       {/* Trip info */}

@@ -32,6 +32,7 @@ import {
   AdminUsersPage,
   AdminNewTripPage,
   AdminNewBookingPage,
+  AdminTripManifestPage,
 } from '@/pages'
 
 const queryClient = new QueryClient({
@@ -78,6 +79,8 @@ function App() {
 
           {/* Admin — shared layout */}
           <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']} />}>
+            {/* Printable — no sidebar chrome */}
+            <Route path="/admin/trips/:id/manifest" element={<AdminTripManifestPage />} />
             <Route element={<AppLayout />}>
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/trips" element={<AdminTripsPage />} />
