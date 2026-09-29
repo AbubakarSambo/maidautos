@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Bus, BookOpen, TrendingUp, Clock } from 'lucide-react'
 import { adminApi } from '@/api'
 import { formatCurrency } from '@/lib/utils'
+import { RevenueByRouteSection } from '@/components/admin/RevenueByRouteChart'
 
 export function AdminDashboardPage() {
   const { data, isLoading } = useQuery({
@@ -46,6 +47,8 @@ export function AdminDashboardPage() {
           <p className="text-3xl font-bold text-primary">{isLoading ? '...' : data ? formatCurrency(data.allTime.revenue) : '—'}</p>
         </div>
       </div>
+
+      <RevenueByRouteSection />
     </div>
   )
 }
