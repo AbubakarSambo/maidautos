@@ -39,7 +39,7 @@ export function AdminDriversPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit((d) => create(d))} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <form onSubmit={handleSubmit((d) => create({ ...d, nin: d.nin || undefined }))} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
           <h3 className="font-bold text-gray-900">Add Driver</h3>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-gray-500">First Name</label><input {...register('firstName', { required: true })} className="mt-1 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>

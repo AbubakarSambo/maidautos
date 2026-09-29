@@ -129,12 +129,14 @@ export function AdminBookingsPage() {
                       <span>{b.dropoffStop.stop.name}</span>
                       <span className="text-gray-400">· Seat {b.seatNumber}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <span>{formatDateTime(b.trip.departureDateTime)}</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
+                      <span>Departure {formatDateTime(b.trip.departureDateTime)}</span>
                       <span>·</span>
                       <span>{formatCurrency(b.amount)}</span>
                       <span>·</span>
                       <span>{b.paymentMethod}</span>
+                      <span>·</span>
+                      <span>Purchased {formatDateTime(b.createdAt)}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">

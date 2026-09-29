@@ -23,14 +23,30 @@ export class DriversService {
   async create(dto: CreateDriverDto) {
     const existing = await this.prisma.driver.findUnique({ where: { phone: dto.phone } });
     if (existing) throw new ConflictException('Driver with this phone number already exists');
-    return this.prisma.driver.create({ data: { ...dto, licenseExpiry: new Date(dto.licenseExpiry) } });
+    try {
+      return await this.prisma.driver.create({
+        data: { ...dto, email: dto.email || undefined, nin: dto.nin || undefined, licenseExpiry: new Date(dto.licenseExpiry) },
+      });
+    } catch (err) {
+      // email/nin are optional-but-unique — an empty string sent for a blank field would
+      // otherwise collide with another driver's blank field and surface as a raw 500.
+      if (err.code === 'P2002') throw new ConflictException('A driver with this email, NIN, or license number already exists');
+      throw err;
+    }
   }
 
   async update(id: string, dto: Partial<CreateDriverDto>) {
     await this.findOne(id);
     const data: any = { ...dto };
+    if (dto.email !== undefined) data.email = dto.email || undefined;
+    if (dto.nin !== undefined) data.nin = dto.nin || undefined;
     if (dto.licenseExpiry) data.licenseExpiry = new Date(dto.licenseExpiry);
-    return this.prisma.driver.update({ where: { id }, data });
+    try {
+      return await this.prisma.driver.update({ where: { id }, data });
+    } catch (err) {
+      if (err.code === 'P2002') throw new ConflictException('A driver with this email, NIN, or license number already exists');
+      throw err;
+    }
   }
 
   async toggleActive(id: string) {
