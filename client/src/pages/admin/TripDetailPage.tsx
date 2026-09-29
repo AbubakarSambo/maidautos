@@ -2,12 +2,37 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
-import { ArrowLeft, Plus, Pencil, Snowflake, Wifi, UtensilsCrossed } from 'lucide-react'
-import { tripsApi, carsApi, driversApi } from '@/api'
+import { ArrowLeft, Plus, Pencil, Snowflake, Wifi, UtensilsCrossed, MessageCircle } from 'lucide-react'
+import { tripsApi, carsApi, driversApi, bookingsApi } from '@/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Select } from '@/components/shared'
-import type { Trip, TripStatus, Car, Driver } from '@/types'
+import type { Trip, TripStatus, Car, Driver, Booking } from '@/types'
+
+const SITE_URL = 'https://maidautos.com'
+
+function toWhatsAppNumber(phone: string) {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.startsWith('234')) return digits
+  if (digits.startsWith('0')) return `234${digits.slice(1)}`
+  return digits
+}
+
+function formatUpcomingRoutesText(upcomingTrips: Trip[]) {
+  if (upcomingTrips.length === 0) return ''
+  const lines = upcomingTrips
+    .slice(0, 8)
+    .map((t) => `• ${t.route.originStop.name} → ${t.route.destinationStop.name} — ${formatDateTime(t.departureDateTime)}`)
+  return `\n\nUpcoming trips this week:\n${lines.join('\n')}`
+}
+
+function buildWaMeLink(booking: Booking, upcomingRoutesText: string) {
+  const phone = booking.user?.phone || booking.guestPhone
+  if (!phone) return null
+  const name = booking.user?.firstName || booking.guestName || 'there'
+  const message = `Hi ${name}, thanks for riding with MaidAutos! We hope you had a great trip.${upcomingRoutesText}\n\nBook again: ${SITE_URL}`
+  return `https://wa.me/${toWhatsAppNumber(phone)}?text=${encodeURIComponent(message)}`
+}
 
 const NEXT_STATUSES: Partial<Record<TripStatus, TripStatus[]>> = {
   SCHEDULED: ['BOARDING', 'CANCELLED'],
@@ -41,6 +66,27 @@ export function AdminTripDetailPage() {
 
   const { data: cars = [] } = useQuery<Car[]>({ queryKey: ['cars'], queryFn: carsApi.findAll, enabled: isEditing })
   const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: ['drivers'], queryFn: driversApi.findAll, enabled: isEditing })
+  const { data: passengers = [] } = useQuery<Booking[]>({
+    queryKey: ['bookings', { tripId: id }],
+    queryFn: () => bookingsApi.findAll({ tripId: id }),
+    enabled: !!id,
+  })
+
+  const { data: upcomingTrips = [] } = useQuery<Trip[]>({
+    queryKey: ['trips', 'upcoming-week'],
+    queryFn: () => {
+      const now = new Date()
+      const nextWeek = new Date(now)
+      nextWeek.setDate(nextWeek.getDate() + 7)
+      return tripsApi.findAll({
+        status: 'SCHEDULED',
+        dateFrom: now.toISOString().slice(0, 10),
+        dateTo: nextWeek.toISOString().slice(0, 10),
+      })
+    },
+    enabled: !!trip && trip.status === 'COMPLETED',
+  })
+  const upcomingRoutesText = formatUpcomingRoutesText(upcomingTrips)
 
   const { register, control, handleSubmit, reset } = useForm<EditForm>()
 
@@ -287,7 +333,37 @@ export function AdminTripDetailPage() {
             <Plus className="w-3 h-3" /> Add booking
           </button>
         </div>
-        <p className="text-gray-500 text-sm">{trip.bookings?.length ?? 0} bookings · {trip.car.capacity - (trip.bookings?.length ?? 0)} seats left</p>
+        <p className="text-gray-500 text-sm mb-3">{trip.bookings?.length ?? 0} bookings · {trip.car.capacity - (trip.bookings?.length ?? 0)} seats left</p>
+
+        {trip.status === 'COMPLETED' && passengers.length > 0 && (
+          <div className="space-y-2 pt-3 border-t border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Send Thank-You Message</p>
+            {passengers.map((b) => {
+              const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Passenger'
+              const waLink = buildWaMeLink(b, upcomingRoutesText)
+              return (
+                <div key={b.id} className="flex items-center justify-between gap-2 py-1.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
+                    <p className="text-xs text-gray-400">Seat {b.seatNumber} · {b.user?.phone || b.guestPhone || 'no phone on file'}</p>
+                  </div>
+                  {waLink ? (
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 flex items-center gap-1.5 bg-green-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:brightness-110 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                    </a>
+                  ) : (
+                    <span className="flex-shrink-0 text-xs text-gray-300">No phone</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

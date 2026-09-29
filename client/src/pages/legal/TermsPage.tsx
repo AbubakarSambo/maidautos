@@ -105,7 +105,7 @@ export function TermsPage() {
           <a href="mailto:maidautosolutions@gmail.com" className="text-primary font-semibold hover:underline">
             maidautosolutions@gmail.com
           </a>{' '}
-          or by phone on 0912 222 2656 / 0912 222 2856.
+          or by phone on 0912 222 2656 / 0912 222 2856 / 0808 126 0175.
         </p>
       </section>
     </PageShell>
