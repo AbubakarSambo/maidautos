@@ -149,6 +149,8 @@ export function SearchPage() {
     posthog.capture('trip_search', {
       from_stop_id: from,
       to_stop_id: to,
+      from_stop_name: allStops.find((s) => s.id === from)?.name,
+      to_stop_name: allStops.find((s) => s.id === to)?.name,
       date,
       passengers,
     })
@@ -389,6 +391,8 @@ export function SearchPage() {
                           trip_id: trip.id,
                           from_stop_id: from,
                           to_stop_id: to,
+                          from_stop_name: allStops.find((s) => s.id === from)?.name,
+                          to_stop_name: allStops.find((s) => s.id === to)?.name,
                           price,
                         })
                         navigate(`/trips/${trip.id}?from=${from}&to=${to}`)
