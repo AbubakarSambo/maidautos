@@ -12,6 +12,7 @@ export function AdminBookingsPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [unpaidCashOnly, setUnpaidCashOnly] = useState(false)
+  const [methodFilter, setMethodFilter] = useState<'ALL' | 'PAYSTACK' | 'CASH'>('ALL')
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['admin-bookings'],
@@ -37,6 +38,7 @@ export function AdminBookingsPage() {
 
   const filtered = bookings.filter((b) => {
     if (unpaidCashOnly && !(b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING')) return false
+    if (methodFilter !== 'ALL' && b.paymentMethod !== methodFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -69,6 +71,19 @@ export function AdminBookingsPage() {
             placeholder="Search by name, phone, or ticket code..."
             className="w-full pl-9 pr-4 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
+        </div>
+        <div className="flex rounded-xl border-2 border-outline-variant overflow-hidden">
+          {(['ALL', 'PAYSTACK', 'CASH'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMethodFilter(m)}
+              className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
+                methodFilter === m ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {m === 'ALL' ? 'All' : m === 'PAYSTACK' ? 'Paystack' : 'Cash'}
+            </button>
+          ))}
         </div>
         <button
           onClick={() => setUnpaidCashOnly((v) => !v)}
