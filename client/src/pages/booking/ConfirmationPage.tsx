@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle, Share2, Bus, Ticket, Printer } from 'lucide-react'
+import { toBlob } from 'html-to-image'
+import { toast } from 'sonner'
 import { bookingsApi } from '@/api'
 import { BookingSteps } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
@@ -31,6 +33,8 @@ export function ConfirmationPage() {
   })
 
   const capturedRef = useRef(false)
+  const ticketRef = useRef<HTMLDivElement>(null)
+  const [isSharing, setIsSharing] = useState(false)
 
   const bookings = booking ? (groupBookings && groupBookings.length > 0 ? groupBookings : [booking]) : []
   const totalAmount = bookings.reduce((sum, b) => sum + Number(b.amount), 0)
@@ -55,6 +59,33 @@ export function ConfirmationPage() {
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
   const passengerName = booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : booking.guestName || 'Guest'
 
+  const handleShareImage = async () => {
+    if (!ticketRef.current) return
+    setIsSharing(true)
+    try {
+      const blob = await toBlob(ticketRef.current, { pixelRatio: 2, backgroundColor: '#ffffff' })
+      if (!blob) throw new Error('Could not generate ticket image')
+      const file = new File([blob], `maidautos-ticket-${booking.ticketCode}.png`, { type: 'image/png' })
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'MaidAutos Ticket' })
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = file.name
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.info('Ticket image downloaded — attach it in WhatsApp to share')
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') toast.error('Could not share ticket image')
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <style>{`@media print { @page { size: 80mm auto; margin: 0; } }`}</style>
@@ -75,7 +106,7 @@ export function ConfirmationPage() {
         </div>
 
         {/* Ticket — styled after our physical paper stub */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex">
+        <div ref={ticketRef} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex">
           {/* Counterfoil */}
           <div
             className="w-12 flex-shrink-0 flex flex-col items-center justify-between py-4 border-r-2 border-dashed border-white/20"
@@ -140,14 +171,13 @@ export function ConfirmationPage() {
 
         {/* Actions */}
         <div className="flex gap-3 print:hidden">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm shadow-lg"
+          <button
+            onClick={handleShareImage}
+            disabled={isSharing}
+            className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-semibold text-sm shadow-lg disabled:opacity-60"
           >
-            <Share2 className="w-4 h-4" /> Share via WhatsApp
-          </a>
+            <Share2 className="w-4 h-4" /> {isSharing ? 'Preparing image...' : 'Share via WhatsApp'}
+          </button>
           <button
             onClick={() => window.print()}
             className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50"

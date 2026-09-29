@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Search, UserX } from 'lucide-react'
 import { tripsApi, bookingsApi } from '@/api'
 import apiClient from '@/api/client'
@@ -12,8 +12,39 @@ import type { Trip } from '@/types'
 
 type PassengerMode = 'search' | 'guest'
 
+type PassengerEntry = {
+  seatNumber: number
+  mode: PassengerMode
+  selectedUserId: string | null
+  selectedUserName: string
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  nokName: string
+  nokPhone: string
+}
+
+function newPassengerEntry(seatNumber: number): PassengerEntry {
+  return {
+    seatNumber,
+    mode: 'guest',
+    selectedUserId: null,
+    selectedUserName: '',
+    guestName: '',
+    guestEmail: '',
+    guestPhone: '',
+    nokName: '',
+    nokPhone: '',
+  }
+}
+
+function isPassengerEntryValid(p: PassengerEntry) {
+  return p.mode === 'search' ? !!p.selectedUserId : !!p.guestPhone || !!p.guestEmail
+}
+
 export function AdminNewBookingPage() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [searchParams] = useSearchParams()
   const preselectedTripId = searchParams.get('tripId') || ''
 
@@ -21,21 +52,26 @@ export function AdminNewBookingPage() {
   const [tripId, setTripId] = useState(preselectedTripId)
   const [pickupStopId, setPickupStopId] = useState('')
   const [dropoffStopId, setDropoffStopId] = useState('')
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [selectedSeats, setSelectedSeats] = useState<number[]>([])
+  const [passengers, setPassengers] = useState<PassengerEntry[]>([])
   // Admin-recorded bookings are always Cash — the agent is standing in front of a walk-in
   // passenger, so there's no one for a Paystack link to go to.
   const paymentMethod = 'CASH' as const
 
-  // Passenger
-  const [passengerMode, setPassengerMode] = useState<PassengerMode>('guest')
-  const [passengerSearch, setPassengerSearch] = useState('')
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const [selectedUserName, setSelectedUserName] = useState('')
-  const [guestName, setGuestName] = useState('')
-  const [guestEmail, setGuestEmail] = useState('')
-  const [guestPhone, setGuestPhone] = useState('')
-  const [nokName, setNokName] = useState('')
-  const [nokPhone, setNokPhone] = useState('')
+  const toggleSeat = (seat: number) => {
+    setSelectedSeats((prev) => {
+      if (prev.includes(seat)) {
+        setPassengers((ps) => ps.filter((p) => p.seatNumber !== seat))
+        return prev.filter((s) => s !== seat)
+      }
+      setPassengers((ps) => [...ps, newPassengerEntry(seat)])
+      return [...prev, seat]
+    })
+  }
+
+  const updatePassenger = (seatNumber: number, patch: Partial<PassengerEntry>) => {
+    setPassengers((ps) => ps.map((p) => (p.seatNumber === seatNumber ? { ...p, ...patch } : p)))
+  }
 
   // Trip search for admin (if no preselected trip)
   const [tripDate, setTripDate] = useState(new Date().toISOString().split('T')[0])
@@ -66,42 +102,27 @@ export function AdminNewBookingPage() {
     enabled: !!tripId && !!pickupStopId && !!dropoffStopId,
   })
 
-  // Passenger user search
-  const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ['user-search', passengerSearch],
-    queryFn: () =>
-      apiClient
-        .get('/users', { params: { role: 'PASSENGER' } })
-        .then((r) =>
-          (r.data.data as any[]).filter(
-            (u) =>
-              u.firstName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
-              u.lastName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
-              u.phone?.includes(passengerSearch) ||
-              u.email?.toLowerCase().includes(passengerSearch.toLowerCase())
-          )
-        ),
-    enabled: passengerMode === 'search' && passengerSearch.length >= 2,
-  })
-
-  // Reset seat when segment changes
-  useEffect(() => setSelectedSeat(null), [pickupStopId, dropoffStopId])
+  // Reset seats when segment changes
+  useEffect(() => { setSelectedSeats([]); setPassengers([]) }, [pickupStopId, dropoffStopId])
   // Reset segment when trip changes
-  useEffect(() => { setPickupStopId(''); setDropoffStopId(''); setSelectedSeat(null) }, [tripId])
+  useEffect(() => { setPickupStopId(''); setDropoffStopId(''); setSelectedSeats([]); setPassengers([]) }, [tripId])
 
   const baseAmount =
     pickupStop && dropoffStop
       ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
       : 0
-  const isPremiumSeat = !!selectedSeat && !!trip?.car.premiumSeatNumbers.includes(selectedSeat)
-  const amount = baseAmount + (isPremiumSeat ? Number(trip?.car.premiumSeatSurcharge ?? 0) : 0)
+  const premiumSurcharge = Number(trip?.car.premiumSeatSurcharge ?? 0)
+  const amountForSeat = (seat: number) =>
+    baseAmount + (trip?.car.premiumSeatNumbers.includes(seat) ? premiumSurcharge : 0)
+  const amount = selectedSeats.reduce((sum, seat) => sum + amountForSeat(seat), 0)
 
   const isReadyToBook =
     !!tripId &&
     !!pickupStopId &&
     !!dropoffStopId &&
-    !!selectedSeat &&
-    (passengerMode === 'search' ? !!selectedUserId : !!guestPhone || !!guestEmail)
+    selectedSeats.length > 0 &&
+    passengers.length === selectedSeats.length &&
+    passengers.every(isPassengerEntryValid)
 
   const { mutate: createBooking, isPending } = useMutation({
     mutationFn: () =>
@@ -110,17 +131,25 @@ export function AdminNewBookingPage() {
         pickupStopId,
         dropoffStopId,
         paymentMethod,
-        passengers: [{
-          seatNumber: selectedSeat!,
-          nokName: nokName || undefined,
-          nokPhone: nokPhone || undefined,
-          ...(passengerMode === 'search' && selectedUserId
-            ? { passengerUserId: selectedUserId }
-            : { guestName: guestName || undefined, guestEmail: guestEmail || undefined, guestPhone: guestPhone || undefined }),
-        }],
+        passengers: passengers.map((p) => ({
+          seatNumber: p.seatNumber,
+          nokName: p.nokName || undefined,
+          nokPhone: p.nokPhone || undefined,
+          ...(p.mode === 'search' && p.selectedUserId
+            ? { passengerUserId: p.selectedUserId }
+            : { guestName: p.guestName || undefined, guestEmail: p.guestEmail || undefined, guestPhone: p.guestPhone || undefined }),
+        })),
       }),
     onSuccess: ({ bookings }) => {
-      toast.success(`Booking created — ${bookings[0].ticketCode}`)
+      toast.success(
+        bookings.length === 1
+          ? `Booking created — ${bookings[0].ticketCode}`
+          : `${bookings.length} bookings created — ${bookings.map((b: any) => b.ticketCode).join(', ')}`
+      )
+      qc.invalidateQueries({ queryKey: ['admin-bookings'] })
+      qc.invalidateQueries({ queryKey: ['bookings'] })
+      qc.invalidateQueries({ queryKey: ['trip'] })
+      qc.invalidateQueries({ queryKey: ['available-seats'] })
       navigate(`/admin/bookings`)
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Booking failed'),
@@ -238,8 +267,8 @@ export function AdminNewBookingPage() {
               carType={trip.car.type}
               capacity={trip.car.capacity}
               takenSeats={seatData.taken}
-              selectedSeats={selectedSeat ? [selectedSeat] : []}
-              onToggleSeat={(seat) => setSelectedSeat((prev) => (prev === seat ? null : seat))}
+              selectedSeats={selectedSeats}
+              onToggleSeat={toggleSeat}
               premiumSeatNumbers={trip.car.premiumSeatNumbers}
               premiumSeatSurcharge={Number(trip.car.premiumSeatSurcharge)}
             />
@@ -249,148 +278,15 @@ export function AdminNewBookingPage() {
         </div>
       )}
 
-      {/* STEP 4 — Passenger */}
-      {selectedSeat && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-bold text-gray-900">
-            <span className="inline-flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-bold mr-2">4</span>
-            Passenger
-          </h2>
-
-          {/* Mode toggle */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setPassengerMode('search'); setSelectedUserId(null); setSelectedUserName('') }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
-                passengerMode === 'search' ? 'bg-primary/10 border-primary text-primary' : 'border-outline-variant text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Search className="w-3.5 h-3.5" /> Existing passenger
-            </button>
-            <button
-              onClick={() => { setPassengerMode('guest'); setSelectedUserId(null); setSelectedUserName('') }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
-                passengerMode === 'guest' ? 'bg-primary/10 border-primary text-primary' : 'border-outline-variant text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <UserX className="w-3.5 h-3.5" /> Walk-in / Guest
-            </button>
-          </div>
-
-          {passengerMode === 'search' ? (
-            <div className="space-y-3">
-              {selectedUserId ? (
-                <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-xl p-3">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {selectedUserName[0]}
-                  </div>
-                  <span className="font-medium text-primary-dark flex-1">{selectedUserName}</span>
-                  <button
-                    onClick={() => { setSelectedUserId(null); setSelectedUserName('') }}
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    Change
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search by name or phone</label>
-                  <div className="relative mt-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      value={passengerSearch}
-                      onChange={(e) => setPassengerSearch(e.target.value)}
-                      placeholder="Start typing..."
-                      className="w-full pl-9 pr-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                  </div>
-                  {passengerSearch.length >= 2 && (
-                    <div className="mt-1.5 border border-outline-variant rounded-xl overflow-hidden">
-                      {searching && (
-                        <p className="px-3 py-2 text-sm text-gray-400">Searching...</p>
-                      )}
-                      {!searching && searchResults.length === 0 && (
-                        <p className="px-3 py-2 text-sm text-gray-400">No passengers found</p>
-                      )}
-                      {searchResults.map((u: any) => (
-                        <button
-                          key={u.id}
-                          onClick={() => {
-                            setSelectedUserId(u.id)
-                            setSelectedUserName(`${u.firstName} ${u.lastName}`)
-                            setPassengerSearch('')
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 text-left border-b last:border-b-0"
-                        >
-                          <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
-                            {u.firstName[0]}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{u.firstName} {u.lastName}</p>
-                            <p className="text-xs text-gray-400">{u.phone || u.email}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Full name</label>
-                <input
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Passenger's full name"
-                  className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone *</label>
-                  <input
-                    value={guestPhone}
-                    onChange={(e) => setGuestPhone(e.target.value)}
-                    placeholder="08012345678"
-                    className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label>
-                  <input
-                    value={guestEmail}
-                    onChange={(e) => setGuestEmail(e.target.value)}
-                    type="email"
-                    placeholder="For ticket delivery"
-                    className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Next of kin — optional safety contact */}
-          <div className="pt-3 border-t border-gray-100">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Next of Kin (optional)</p>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={nokName}
-                onChange={(e) => setNokName(e.target.value)}
-                placeholder="Next of kin's name"
-                className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-              <input
-                value={nokPhone}
-                onChange={(e) => setNokPhone(e.target.value)}
-                placeholder="Next of kin's phone"
-                className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* STEP 4 — Passengers (one card per selected seat) */}
+      {passengers.map((p, i) => (
+        <PassengerCard
+          key={p.seatNumber}
+          index={i}
+          entry={p}
+          onChange={(patch) => updatePassenger(p.seatNumber, patch)}
+        />
+      ))}
 
       {/* STEP 5 — Payment */}
       {isReadyToBook && (
@@ -415,11 +311,12 @@ export function AdminNewBookingPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-gray-500">Route</span><span className="font-medium">{pickupStop?.stop.name} → {dropoffStop?.stop.name}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Departure</span><span className="font-medium">{trip && formatDateTime(trip.departureDateTime)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Seat</span><span className="font-bold text-primary">{selectedSeat}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Passenger</span><span className="font-medium">{selectedUserName || guestName || guestPhone}</span></div>
-            {(nokName || nokPhone) && (
-              <div className="flex justify-between"><span className="text-gray-500">Next of Kin</span><span className="font-medium">{[nokName, nokPhone].filter(Boolean).join(' · ')}</span></div>
-            )}
+            {passengers.map((p) => (
+              <div key={p.seatNumber} className="flex justify-between">
+                <span className="text-gray-500">Seat {p.seatNumber}</span>
+                <span className="font-medium">{p.selectedUserName || p.guestName || p.guestPhone}</span>
+              </div>
+            ))}
             <div className="flex justify-between"><span className="text-gray-500">Payment</span><span className="font-medium">{paymentMethod}</span></div>
             <div className="flex justify-between pt-2 border-t"><span className="font-semibold">Fare</span><span className="font-bold text-lg text-primary">{formatCurrency(amount)}</span></div>
           </div>
@@ -429,10 +326,183 @@ export function AdminNewBookingPage() {
             disabled={isPending}
             className="w-full bg-primary hover:brightness-110 disabled:opacity-50 text-white py-3.5 rounded-xl font-bold transition-colors shadow-lg"
           >
-            {isPending ? 'Creating booking...' : `Confirm Booking — ${formatCurrency(amount)}`}
+            {isPending
+              ? 'Creating booking...'
+              : `Confirm ${passengers.length > 1 ? `${passengers.length} Bookings` : 'Booking'} — ${formatCurrency(amount)}`}
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function PassengerCard({
+  index,
+  entry,
+  onChange,
+}: {
+  index: number
+  entry: PassengerEntry
+  onChange: (patch: Partial<PassengerEntry>) => void
+}) {
+  const [passengerSearch, setPassengerSearch] = useState('')
+
+  const { data: searchResults = [], isFetching: searching } = useQuery({
+    queryKey: ['user-search', passengerSearch],
+    queryFn: () =>
+      apiClient
+        .get('/users', { params: { role: 'PASSENGER' } })
+        .then((r) =>
+          (r.data.data as any[]).filter(
+            (u) =>
+              u.firstName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
+              u.lastName?.toLowerCase().includes(passengerSearch.toLowerCase()) ||
+              u.phone?.includes(passengerSearch) ||
+              u.email?.toLowerCase().includes(passengerSearch.toLowerCase())
+          )
+        ),
+    enabled: entry.mode === 'search' && passengerSearch.length >= 2,
+  })
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+      <h2 className="font-bold text-gray-900">
+        <span className="inline-flex items-center justify-center w-6 h-6 bg-primary text-white rounded-full text-xs font-bold mr-2">4</span>
+        Passenger — Seat {entry.seatNumber}
+        {index === 0 ? '' : ` (${index + 1})`}
+      </h2>
+
+      {/* Mode toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onChange({ mode: 'search', selectedUserId: null, selectedUserName: '' })}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+            entry.mode === 'search' ? 'bg-primary/10 border-primary text-primary' : 'border-outline-variant text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <Search className="w-3.5 h-3.5" /> Existing passenger
+        </button>
+        <button
+          onClick={() => onChange({ mode: 'guest', selectedUserId: null, selectedUserName: '' })}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+            entry.mode === 'guest' ? 'bg-primary/10 border-primary text-primary' : 'border-outline-variant text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <UserX className="w-3.5 h-3.5" /> Walk-in / Guest
+        </button>
+      </div>
+
+      {entry.mode === 'search' ? (
+        <div className="space-y-3">
+          {entry.selectedUserId ? (
+            <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-xl p-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                {entry.selectedUserName[0]}
+              </div>
+              <span className="font-medium text-primary-dark flex-1">{entry.selectedUserName}</span>
+              <button
+                onClick={() => onChange({ selectedUserId: null, selectedUserName: '' })}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Change
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Search by name or phone</label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  value={passengerSearch}
+                  onChange={(e) => setPassengerSearch(e.target.value)}
+                  placeholder="Start typing..."
+                  className="w-full pl-9 pr-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              {passengerSearch.length >= 2 && (
+                <div className="mt-1.5 border border-outline-variant rounded-xl overflow-hidden">
+                  {searching && (
+                    <p className="px-3 py-2 text-sm text-gray-400">Searching...</p>
+                  )}
+                  {!searching && searchResults.length === 0 && (
+                    <p className="px-3 py-2 text-sm text-gray-400">No passengers found</p>
+                  )}
+                  {searchResults.map((u: any) => (
+                    <button
+                      key={u.id}
+                      onClick={() => {
+                        onChange({ selectedUserId: u.id, selectedUserName: `${u.firstName} ${u.lastName}` })
+                        setPassengerSearch('')
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 text-left border-b last:border-b-0"
+                    >
+                      <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
+                        {u.firstName[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-gray-400">{u.phone || u.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Full name</label>
+            <input
+              value={entry.guestName}
+              onChange={(e) => onChange({ guestName: e.target.value })}
+              placeholder="Passenger's full name"
+              className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone *</label>
+              <input
+                value={entry.guestPhone}
+                onChange={(e) => onChange({ guestPhone: e.target.value })}
+                placeholder="08012345678"
+                className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label>
+              <input
+                value={entry.guestEmail}
+                onChange={(e) => onChange({ guestEmail: e.target.value })}
+                type="email"
+                placeholder="For ticket delivery"
+                className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Next of kin — optional safety contact */}
+      <div className="pt-3 border-t border-gray-100">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Next of Kin (optional)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            value={entry.nokName}
+            onChange={(e) => onChange({ nokName: e.target.value })}
+            placeholder="Next of kin's name"
+            className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+          <input
+            value={entry.nokPhone}
+            onChange={(e) => onChange({ nokPhone: e.target.value })}
+            placeholder="Next of kin's phone"
+            className="px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+      </div>
     </div>
   )
 }
