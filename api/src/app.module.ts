@@ -13,6 +13,7 @@ import { TripsModule } from './modules/trips';
 import { BookingsModule } from './modules/bookings';
 import { PaystackModule } from './modules/paystack';
 import { AdminModule } from './modules/admin';
+import { ContactModule } from './modules/contact';
 import { JwtAuthGuard, RolesGuard, GlobalExceptionFilter, TransformInterceptor } from './common';
 
 @Module({
@@ -30,6 +31,7 @@ import { JwtAuthGuard, RolesGuard, GlobalExceptionFilter, TransformInterceptor }
     BookingsModule,
     PaystackModule,
     AdminModule,
+    ContactModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -51,6 +51,7 @@ export function PageShell({ title, updated, contentClassName, proseStyles = true
           <div className="flex gap-6">
             <Link to="/privacy" className="text-[11px] font-medium text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="text-[11px] font-medium text-white/60 hover:text-white transition-colors">Terms &amp; Conditions</Link>
+            <Link to="/contact" className="text-[11px] font-medium text-white/60 hover:text-white transition-colors">Contact Us</Link>
           </div>
         </div>
       </footer>

@@ -8,6 +8,7 @@ import {
   RoutesPage,
   TermsPage,
   PrivacyPage,
+  ContactPage,
   TripDetailPage,
   CheckoutPage,
   ConfirmationPage,
@@ -55,6 +56,7 @@ function App() {
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/trips/:id" element={<TripDetailPage />} />
           <Route path="/booking/checkout" element={<CheckoutPage />} />
           <Route path="/booking/confirmation/:ticketCode" element={<ConfirmationPage />} />

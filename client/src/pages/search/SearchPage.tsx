@@ -593,6 +593,7 @@ export function SearchPage() {
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="tel:+2349122222656">0912 222 2656</a></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="tel:+2349122222856">0912 222 2856</a></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="tel:08081260175">0808 126 0175</a></li>
+              <li><Link className="text-sm text-white/60 hover:text-white transition-colors" to="/contact">Contact Us</Link></li>
               {isAuthenticated ? (
                 <>
                   <li><Link to="/account/bookings" className="text-sm text-white/60 hover:text-white transition-colors">My Bookings</Link></li>

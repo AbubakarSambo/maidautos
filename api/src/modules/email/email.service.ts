@@ -129,6 +129,28 @@ export class EmailService {
     });
   }
 
+  // Contact form fields are public, unauthenticated input rendered straight into an
+  // HTML email — escape them so a submitted name/message can't inject markup/links.
+  async sendContactEmail(name: string, email: string, subject: string | undefined, message: string) {
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    await this.resend.emails.send({
+      from: this.fromEmail,
+      to: 'samboabubakar5@gmail.com',
+      replyTo: email,
+      subject: `[MaidAutos Contact] ${subject ? esc(subject) : `Message from ${esc(name)}`}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+          <h2>New Contact Form Submission</h2>
+          <p><strong>Name:</strong> ${esc(name)}</p>
+          <p><strong>Email:</strong> ${esc(email)}</p>
+          ${subject ? `<p><strong>Subject:</strong> ${esc(subject)}</p>` : ''}
+          <p><strong>Message:</strong></p>
+          <p style="white-space:pre-wrap">${esc(message)}</p>
+        </div>
+      `,
+    });
+  }
+
   async sendBookingCancellationEmail(email: string, firstName: string, ticketCode: string) {
     await this.resend.emails.send({
       from: this.fromEmail,
