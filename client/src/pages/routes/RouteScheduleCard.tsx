@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Clock, Bus, Calendar, Wifi, UtensilsCrossed } from 'lucide-react'
 import { tripsApi } from '@/api'
 import { cn, formatCurrency, formatDuration } from '@/lib/utils'
-import type { Route, Trip } from '@/types'
+import type { Route, TripSearchResult } from '@/types'
 
 function dayLabel(offset: number) {
   if (offset === 0) return 'Today'
@@ -28,10 +28,13 @@ export function RouteScheduleCard({ route }: { route: Route }) {
   const [dayOffset, setDayOffset] = useState(0)
   const date = dateForOffset(dayOffset)
 
-  const { data: trips = [], isLoading } = useQuery<Trip[]>({
+  const { data: searchResult, isLoading } = useQuery<TripSearchResult>({
     queryKey: ['route-trips', route.id, date],
     queryFn: () => tripsApi.search(route.originStopId, route.destinationStopId, date),
   })
+  // Fallback trips belong to a different date than the selected day tab, so
+  // ignore them here — the day tabs are the user's own "pick another date" UI.
+  const trips = searchResult?.isFallback ? [] : searchResult?.trips ?? []
 
   return (
     <div className="bg-surface rounded-2xl border border-outline-variant overflow-hidden">
