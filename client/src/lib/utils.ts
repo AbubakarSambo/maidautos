@@ -22,6 +22,19 @@ export function getSegmentFare(trip: Trip, pickupStop: RouteStop, dropoffStop: R
   return fare
 }
 
+// There's no per-stop duration recorded, only distance, so a segment's duration
+// is estimated proportionally from the route's total estimated duration — e.g.
+// a stop 40% of the way through the route's distance takes ~40% of its duration.
+export function getSegmentDuration(trip: Trip, pickupStop: RouteStop, dropoffStop: RouteStop): number {
+  const stops = trip.route.routeStops
+  const first = stops[0]
+  const last = stops[stops.length - 1]
+  const totalDistance = Number(last.distanceFromOriginKm) - Number(first.distanceFromOriginKm)
+  if (totalDistance <= 0) return trip.route.estimatedDurationMinutes
+  const segmentDistance = Number(dropoffStop.distanceFromOriginKm) - Number(pickupStop.distanceFromOriginKm)
+  return Math.round((segmentDistance / totalDistance) * trip.route.estimatedDurationMinutes)
+}
+
 export function formatCurrency(amount: number | string) {
   return `₦${Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 0 })}`
 }

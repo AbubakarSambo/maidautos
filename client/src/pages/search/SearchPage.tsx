@@ -7,7 +7,7 @@ import {
   UserCircle, LogOut, Snowflake,
 } from 'lucide-react'
 import { stopsApi, tripsApi } from '@/api'
-import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
+import { formatDateTime, formatDuration, formatCurrency, getSegmentFare, getSegmentDuration } from '@/lib/utils'
 import { Select, ContactForm } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
 import { posthog } from '@/lib/posthog'
@@ -429,7 +429,7 @@ export function SearchPage() {
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" />
-                          {formatDuration(trip.route.estimatedDurationMinutes)}
+                          {formatDuration(fromStop && toStop ? getSegmentDuration(trip, fromStop, toStop) : trip.route.estimatedDurationMinutes)}
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Bus className="w-3.5 h-3.5" />

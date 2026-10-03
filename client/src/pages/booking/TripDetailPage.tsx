@@ -6,7 +6,7 @@ import { tripsApi } from '@/api'
 import type { Trip } from '@/types'
 import { SeatGrid } from '@/components/ui/SeatGrid'
 import { BookingSteps } from '@/components/shared'
-import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '@/lib/utils'
+import { formatDateTime, formatDuration, formatCurrency, getSegmentFare, getSegmentDuration } from '@/lib/utils'
 import { posthog } from '@/lib/posthog'
 
 export function TripDetailPage() {
@@ -46,6 +46,7 @@ export function TripDetailPage() {
   if (!trip) return <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">Trip not found</div>
 
   const price = pickupStop && dropoffStop ? getSegmentFare(trip, pickupStop, dropoffStop) : 0
+  const duration = pickupStop && dropoffStop ? getSegmentDuration(trip, pickupStop, dropoffStop) : trip.route.estimatedDurationMinutes
   const premiumSeatNumbers = trip.car.premiumSeatNumbers
   const premiumSeatSurcharge = Number(trip.car.premiumSeatSurcharge)
   const seatPrice = (seat: number) => price + (premiumSeatNumbers.includes(seat) ? premiumSeatSurcharge : 0)
@@ -85,7 +86,7 @@ export function TripDetailPage() {
           </div>
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Departure</p><p className="font-semibold text-gray-900 mt-0.5">{formatDateTime(trip.departureDateTime)}</p></div>
-            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Duration</p><p className="font-semibold text-gray-900 mt-0.5">{formatDuration(trip.route.estimatedDurationMinutes)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Duration</p><p className="font-semibold text-gray-900 mt-0.5">{formatDuration(duration)}</p></div>
             <div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Price</p><p className="font-semibold text-primary mt-0.5">{formatCurrency(price)}</p></div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
