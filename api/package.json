@@ -4,7 +4,7 @@
   "description": "MaidAutos transport booking API",
   "main": "dist/src/main.js",
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "npm": "10.x"
   },
   "scripts": {
