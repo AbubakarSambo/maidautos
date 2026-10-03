@@ -416,9 +416,9 @@ export function SearchPage() {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2 font-semibold text-on-surface">
-                          <span>{trip.route.originStop.name}</span>
+                          <span>{fromStop?.stop.name ?? trip.route.originStop.name}</span>
                           <ArrowRight className="w-4 h-4 text-gray-muted group-hover:text-primary transition-colors" />
-                          <span>{trip.route.destinationStop.name}</span>
+                          <span>{toStop?.stop.name ?? trip.route.destinationStop.name}</span>
                         </div>
                         <span className="text-primary font-bold text-xl">{formatCurrency(price)}</span>
                       </div>
