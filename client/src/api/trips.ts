@@ -1,7 +1,7 @@
 import apiClient from './client'
 
 export const tripsApi = {
-  search: (from: string, to: string, date: string) =>
+  search: (from: string, to: string, date: string): Promise<import('@/types').TripSearchResult> =>
     apiClient.get('/trips/search', { params: { from, to, date } }).then((r) => r.data.data),
 
   findAll: (params?: { status?: string; date?: string; dateFrom?: string; dateTo?: string }) =>

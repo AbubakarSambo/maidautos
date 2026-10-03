@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { CreateBulkTripsDto } from './dto/create-bulk-trips.dto';
 import { AddStatusUpdateDto } from './dto/add-status-update.dto';
-import { TripStatus } from '@prisma/client';
+import { Prisma, TripStatus } from '@prisma/client';
 
 // Must match PENDING_PAYMENT_HOLD_MINUTES in bookings.service.ts — a booking
 // still awaiting online payment only holds its seat for this long.
@@ -94,36 +94,78 @@ export class TripsService {
       })
       .map((r) => r.id);
 
-    if (validRouteIds.length === 0) return [];
+    if (validRouteIds.length === 0) return { trips: [], isFallback: false, fallbackDate: null };
+
+    const searchInclude = {
+      route: {
+        include: {
+          originStop: true,
+          destinationStop: true,
+          routeStops: { include: { stop: true }, orderBy: { order: 'asc' } },
+        },
+      },
+      car: true,
+      driver: { select: { id: true, firstName: true, lastName: true } },
+      statusUpdates: { orderBy: { createdAt: 'desc' }, take: 1 },
+      bookings: {
+        where: { status: { in: ['CONFIRMED', 'COMPLETED'] } },
+        select: { seatNumber: true, pickupStopId: true, dropoffStopId: true },
+      },
+    } satisfies Prisma.TripInclude;
 
     const d = new Date(date);
     const next = new Date(d);
     next.setDate(next.getDate() + 1);
 
-    return this.prisma.trip.findMany({
+    const trips = await this.prisma.trip.findMany({
       where: {
         routeId: { in: validRouteIds },
         departureDateTime: { gte: d, lt: next },
         status: { in: ['SCHEDULED', 'BOARDING'] },
       },
-      include: {
-        route: {
-          include: {
-            originStop: true,
-            destinationStop: true,
-            routeStops: { include: { stop: true }, orderBy: { order: 'asc' } },
-          },
-        },
-        car: true,
-        driver: { select: { id: true, firstName: true, lastName: true } },
-        statusUpdates: { orderBy: { createdAt: 'desc' }, take: 1 },
-        bookings: {
-          where: { status: { in: ['CONFIRMED', 'COMPLETED'] } },
-          select: { seatNumber: true, pickupStopId: true, dropoffStopId: true },
-        },
+      include: searchInclude,
+      orderBy: { departureDateTime: 'asc' },
+    });
+
+    if (trips.length > 0) return { trips, isFallback: false, fallbackDate: null };
+
+    // No trips on the searched date — find the next day (anywhere in the future)
+    // that has an available trip on this route, and surface that instead of an
+    // empty result, so a rider searching Oct 9 sees the Oct 10 trip rather than nothing.
+    const nextAvailable = await this.prisma.trip.findFirst({
+      where: {
+        routeId: { in: validRouteIds },
+        departureDateTime: { gte: next },
+        status: { in: ['SCHEDULED', 'BOARDING'] },
       },
       orderBy: { departureDateTime: 'asc' },
     });
+
+    if (!nextAvailable) return { trips: [], isFallback: false, fallbackDate: null };
+
+    const fallbackDayStart = new Date(Date.UTC(
+      nextAvailable.departureDateTime.getUTCFullYear(),
+      nextAvailable.departureDateTime.getUTCMonth(),
+      nextAvailable.departureDateTime.getUTCDate(),
+    ));
+    const fallbackDayEnd = new Date(fallbackDayStart);
+    fallbackDayEnd.setDate(fallbackDayEnd.getDate() + 1);
+
+    const fallbackTrips = await this.prisma.trip.findMany({
+      where: {
+        routeId: { in: validRouteIds },
+        departureDateTime: { gte: fallbackDayStart, lt: fallbackDayEnd },
+        status: { in: ['SCHEDULED', 'BOARDING'] },
+      },
+      include: searchInclude,
+      orderBy: { departureDateTime: 'asc' },
+    });
+
+    return {
+      trips: fallbackTrips,
+      isFallback: true,
+      fallbackDate: fallbackDayStart.toISOString().split('T')[0],
+    };
   }
 
   async findOne(id: string) {

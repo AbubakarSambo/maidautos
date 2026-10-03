@@ -11,7 +11,7 @@ import { formatDateTime, formatDuration, formatCurrency, getSegmentFare } from '
 import { Select, ContactForm } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
 import { posthog } from '@/lib/posthog'
-import type { Stop, Trip } from '@/types'
+import type { Stop, TripSearchResult } from '@/types'
 
 const FEATURES = [
   {
@@ -136,11 +136,13 @@ export function SearchPage() {
     }
   }, [allStops, searchParams])
 
-  const { data: results = [], isLoading } = useQuery<Trip[]>({
+  const { data: searchResult, isLoading } = useQuery<TripSearchResult>({
     queryKey: ['trips-search', from, to, date],
     queryFn: () => tripsApi.search(from, to, date),
     enabled: searched && !!from && !!to && !!date,
   })
+  const results = searchResult?.trips ?? []
+  const isFallback = searchResult?.isFallback ?? false
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -377,6 +379,18 @@ export function SearchPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {isFallback && (
+                  <div className="flex items-start gap-3 bg-surface-rose border border-primary/20 rounded-xl px-4 py-3 mb-1">
+                    <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-sm text-on-surface">
+                      No trips on {new Date(`${date}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.
+                      {' '}Showing the next available trip{results.length !== 1 ? 's' : ''} on{' '}
+                      <span className="font-semibold">
+                        {new Date(`${searchResult?.fallbackDate}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                      </span>.
+                    </p>
+                  </div>
+                )}
                 <p className="text-on-surface-variant text-sm">{results.length} trip{results.length !== 1 ? 's' : ''} available</p>
                 {results.map((trip) => {
                   const fromStop = trip.route.routeStops.find((rs) => rs.stopId === from)
@@ -394,6 +408,7 @@ export function SearchPage() {
                           from_stop_name: allStops.find((s) => s.id === from)?.name,
                           to_stop_name: allStops.find((s) => s.id === to)?.name,
                           price,
+                          is_fallback_date: isFallback,
                         })
                         navigate(`/trips/${trip.id}?from=${from}&to=${to}`)
                       }}

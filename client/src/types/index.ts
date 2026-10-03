@@ -108,6 +108,12 @@ export interface Trip {
   _count?: { bookings: number }
 }
 
+export interface TripSearchResult {
+  trips: Trip[]
+  isFallback: boolean
+  fallbackDate: string | null
+}
+
 export interface Booking {
   id: string
   tripId: string
