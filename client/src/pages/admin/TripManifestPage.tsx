@@ -47,8 +47,8 @@ export function AdminTripManifestPage() {
       </div>
 
       {/* Document */}
-      <div className="max-w-3xl mx-auto p-6 print:p-0 print:max-w-none">
-        <div className="bg-white rounded-2xl print:rounded-none shadow-sm print:shadow-none border border-gray-100 print:border-0 p-8 print:p-0">
+      <div className="max-w-3xl mx-auto p-3 sm:p-6 print:p-0 print:max-w-none">
+        <div className="bg-white rounded-2xl print:rounded-none shadow-sm print:shadow-none border border-gray-100 print:border-0 p-4 sm:p-8 print:p-0">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-900">
             <img src="/logo.png" alt="MaidAutos" className="h-10 w-auto" />
@@ -59,7 +59,7 @@ export function AdminTripManifestPage() {
           </div>
 
           {/* Trip details */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm py-4 border-b border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm py-4 border-b border-gray-200">
             <ManifestField label="Route" value={`${trip.route.originStop.name} → ${trip.route.destinationStop.name}`} />
             <ManifestField label="Departure" value={formatDateTime(trip.departureDateTime)} />
             <ManifestField label="Vehicle" value={`${trip.car.make} ${trip.car.model} — ${trip.car.plateNumber}`} />
@@ -69,44 +69,46 @@ export function AdminTripManifestPage() {
           </div>
 
           {/* Passenger table */}
-          <table className="w-full text-sm mt-4 border-collapse">
-            <thead>
-              <tr className="text-left border-b-2 border-gray-900">
-                <th className="py-2 pr-2 font-bold text-gray-900">Seat</th>
-                <th className="py-2 pr-2 font-bold text-gray-900">Name</th>
-                <th className="py-2 pr-2 font-bold text-gray-900">Phone</th>
-                <th className="py-2 pr-2 font-bold text-gray-900">Next of Kin</th>
-                <th className="py-2 pr-2 font-bold text-gray-900">Pickup</th>
-                <th className="py-2 pr-2 font-bold text-gray-900">Dropoff</th>
-                <th className="py-2 pl-2 font-bold text-gray-900 text-right">Payment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {passengers.map((b) => {
-                const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || '—'
-                const phone = b.user?.phone || b.guestPhone || '—'
-                const nok = [b.nokName, b.nokPhone].filter(Boolean).join(' · ') || '—'
-                return (
-                  <tr key={b.id} className="border-b border-gray-200 break-inside-avoid">
-                    <td className="py-2 pr-2 font-bold text-primary">{b.seatNumber}</td>
-                    <td className="py-2 pr-2">{name}</td>
-                    <td className="py-2 pr-2">{phone}</td>
-                    <td className="py-2 pr-2">{nok}</td>
-                    <td className="py-2 pr-2">{b.pickupStop.stop.name}</td>
-                    <td className="py-2 pr-2">{b.dropoffStop.stop.name}</td>
-                    <td className="py-2 pl-2 text-right">
-                      {b.paymentStatus === 'PAID' ? 'Paid' : b.paymentStatus === 'PENDING' ? 'Pending' : b.paymentStatus}
-                    </td>
-                  </tr>
-                )
-              })}
-              {passengers.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-6 text-center text-gray-400">No passengers on this trip.</td>
+          <div className="overflow-x-auto print:overflow-visible -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[640px] print:min-w-0 text-sm mt-4 border-collapse">
+              <thead>
+                <tr className="text-left border-b-2 border-gray-900">
+                  <th className="py-2 pr-2 font-bold text-gray-900">Seat</th>
+                  <th className="py-2 pr-2 font-bold text-gray-900">Name</th>
+                  <th className="py-2 pr-2 font-bold text-gray-900">Phone</th>
+                  <th className="py-2 pr-2 font-bold text-gray-900">Next of Kin</th>
+                  <th className="py-2 pr-2 font-bold text-gray-900">Pickup</th>
+                  <th className="py-2 pr-2 font-bold text-gray-900">Dropoff</th>
+                  <th className="py-2 pl-2 font-bold text-gray-900 text-right">Payment</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {passengers.map((b) => {
+                  const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || '—'
+                  const phone = b.user?.phone || b.guestPhone || '—'
+                  const nok = [b.nokName, b.nokPhone].filter(Boolean).join(' · ') || '—'
+                  return (
+                    <tr key={b.id} className="border-b border-gray-200 break-inside-avoid">
+                      <td className="py-2 pr-2 font-bold text-primary">{b.seatNumber}</td>
+                      <td className="py-2 pr-2">{name}</td>
+                      <td className="py-2 pr-2">{phone}</td>
+                      <td className="py-2 pr-2">{nok}</td>
+                      <td className="py-2 pr-2">{b.pickupStop.stop.name}</td>
+                      <td className="py-2 pr-2">{b.dropoffStop.stop.name}</td>
+                      <td className="py-2 pl-2 text-right">
+                        {b.paymentStatus === 'PAID' ? 'Paid' : b.paymentStatus === 'PENDING' ? 'Pending' : b.paymentStatus}
+                      </td>
+                    </tr>
+                  )
+                })}
+                {passengers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-gray-400">No passengers on this trip.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Totals */}
           <div className="flex justify-between items-center mt-4 pt-3 border-t-2 border-gray-900 text-sm font-bold">
