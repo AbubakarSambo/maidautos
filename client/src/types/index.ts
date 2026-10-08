@@ -36,6 +36,14 @@ export interface RouteStop {
   stop: Stop
 }
 
+export interface RouteSegmentFare {
+  id: string
+  routeId: string
+  fromStopId: string
+  toStopId: string
+  price: number
+}
+
 export interface Route {
   id: string
   originStopId: string
@@ -45,6 +53,7 @@ export interface Route {
   originStop: Stop
   destinationStop: Stop
   routeStops: RouteStop[]
+  segmentFares: RouteSegmentFare[]
 }
 
 export interface Car {

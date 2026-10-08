@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { resolveSegmentFare } from '../routes/segment-fare.util';
 import * as crypto from 'crypto';
 
 // A booking awaiting online payment holds its seat for this long before the
@@ -117,7 +118,7 @@ export class BookingsService {
     const trip = await this.prisma.trip.findUnique({
       where: { id: dto.tripId },
       include: {
-        route: { include: { routeStops: { orderBy: { order: 'asc' } } } },
+        route: { include: { routeStops: { orderBy: { order: 'asc' } }, segmentFares: true } },
         car: true,
       },
     });
@@ -167,19 +168,12 @@ export class BookingsService {
       }
     }
 
-    // Calculate base amount: priceFromOrigin[dropoff] - priceFromOrigin[pickup]. If this
-    // trip has a priceOverride (e.g. a no-AC car costs less), scale that segment fare
+    // Calculate base amount: an explicit segment fare override for this pickup->dropoff
+    // pair if one is set, otherwise priceFromOrigin[dropoff] - priceFromOrigin[pickup]. If
+    // this trip has a priceOverride (e.g. a no-AC car costs less), scale that segment fare
     // proportionally against the override so relative stop-to-stop pricing is preserved
     // — e.g. a route-wide override to 60% of the listed price makes every segment 60% too.
-    let baseAmount = Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin);
-    if (trip.priceOverride != null) {
-      const firstStop = trip.route.routeStops[0];
-      const lastStop = trip.route.routeStops[trip.route.routeStops.length - 1];
-      const fullRouteFare = Number(lastStop.priceFromOrigin) - Number(firstStop.priceFromOrigin);
-      if (fullRouteFare > 0) {
-        baseAmount = baseAmount * (Number(trip.priceOverride) / fullRouteFare);
-      }
-    }
+    const baseAmount = resolveSegmentFare(trip.route, pickupStop, dropoffStop, trip.priceOverride);
     if (baseAmount <= 0) throw new BadRequestException('Invalid price calculation for this segment');
     const premiumSurcharge = Number(trip.car.premiumSeatSurcharge);
     const amountForSeat = (seatNumber: number) =>

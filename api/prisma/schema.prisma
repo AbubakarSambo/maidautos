@@ -132,9 +132,10 @@ model Route {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  originStop      Stop        @relation("OriginRoutes", fields: [originStopId], references: [id])
-  destinationStop Stop        @relation("DestinationRoutes", fields: [destinationStopId], references: [id])
+  originStop      Stop               @relation("OriginRoutes", fields: [originStopId], references: [id])
+  destinationStop Stop               @relation("DestinationRoutes", fields: [destinationStopId], references: [id])
   routeStops      RouteStop[]
+  segmentFares    RouteSegmentFare[]
   trips           Trip[]
 
   @@index([originStopId, destinationStopId])
@@ -157,10 +158,36 @@ model RouteStop {
   pickupBookings  Booking[] @relation("PickupStop")
   dropoffBookings Booking[] @relation("DropoffStop")
 
+  fareOverridesFrom RouteSegmentFare[] @relation("FareFromStop")
+  fareOverridesTo   RouteSegmentFare[] @relation("FareToStop")
+
   @@unique([routeId, stopId])
   @@unique([routeId, order])
   @@index([routeId])
   @@map("route_stops")
+}
+
+// Explicit price override for one specific pickup->dropoff pair on a route, taking
+// precedence over the cumulative priceFromOrigin subtraction when present. Lets an
+// admin set a segment's fare independently without disturbing every other segment
+// that shares one of its stops.
+model RouteSegmentFare {
+  id         String  @id @default(uuid())
+  routeId    String  @map("route_id")
+  fromStopId String  @map("from_route_stop_id")
+  toStopId   String  @map("to_route_stop_id")
+  price      Decimal @map("price") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  route    Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fromStop RouteStop @relation("FareFromStop", fields: [fromStopId], references: [id], onDelete: Cascade)
+  toStop   RouteStop @relation("FareToStop", fields: [toStopId], references: [id], onDelete: Cascade)
+
+  @@unique([fromStopId, toStopId])
+  @@index([routeId])
+  @@map("route_segment_fares")
 }
 
 model Car {

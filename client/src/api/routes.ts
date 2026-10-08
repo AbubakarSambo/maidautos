@@ -11,4 +11,7 @@ export const routesApi = {
   addStop: (routeId: string, data: { stopId: string; distanceFromOriginKm: number; priceFromOrigin: number }) =>
     apiClient.post(`/routes/${routeId}/stops`, data).then((r) => r.data.data),
   remove: (id: string) => apiClient.delete(`/routes/${id}`).then((r) => r.data.data),
+  setSegmentFare: (routeId: string, data: { fromStopId: string; toStopId: string; price: number }) =>
+    apiClient.post(`/routes/${routeId}/segment-fares`, data).then((r) => r.data.data),
+  removeSegmentFare: (id: string) => apiClient.delete(`/routes/segment-fares/${id}`).then((r) => r.data.data),
 }

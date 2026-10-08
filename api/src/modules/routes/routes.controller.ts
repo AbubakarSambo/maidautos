@@ -68,4 +68,21 @@ export class RoutesController {
   removeStop(@Param('routeStopId') routeStopId: string) {
     return this.routesService.removeStop(routeStopId);
   }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Post(':id/segment-fares')
+  setSegmentFare(
+    @Param('id') id: string,
+    @Body() data: { fromStopId: string; toStopId: string; price: number },
+  ) {
+    return this.routesService.setSegmentFare(id, data);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Delete('segment-fares/:id')
+  removeSegmentFare(@Param('id') id: string) {
+    return this.routesService.removeSegmentFare(id);
+  }
 }

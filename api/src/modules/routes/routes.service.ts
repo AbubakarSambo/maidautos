@@ -12,6 +12,7 @@ export class RoutesService {
         originStop: true,
         destinationStop: true,
         routeStops: { include: { stop: true }, orderBy: { order: 'asc' } },
+        segmentFares: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -24,6 +25,7 @@ export class RoutesService {
         originStop: true,
         destinationStop: true,
         routeStops: { include: { stop: true }, orderBy: { order: 'asc' } },
+        segmentFares: true,
       },
     });
     if (!route) throw new NotFoundException('Route not found');
@@ -54,6 +56,7 @@ export class RoutesService {
         originStop: true,
         destinationStop: true,
         routeStops: { include: { stop: true }, orderBy: { order: 'asc' } },
+        segmentFares: true,
       },
     });
   }
@@ -118,6 +121,33 @@ export class RoutesService {
 
     await this.renumberStops(routeId);
     return this.findOne(routeId);
+  }
+
+  // Sets (or replaces) the explicit fare for one pickup->dropoff pair on a route,
+  // overriding the cumulative priceFromOrigin subtraction for that pair only.
+  async setSegmentFare(routeId: string, data: { fromStopId: string; toStopId: string; price: number }) {
+    const route = await this.findOne(routeId);
+    const fromStop = route.routeStops.find((rs) => rs.id === data.fromStopId);
+    const toStop = route.routeStops.find((rs) => rs.id === data.toStopId);
+    if (!fromStop || !toStop) throw new NotFoundException('Stop not found on this route');
+    if (fromStop.order >= toStop.order) {
+      throw new ConflictException('The "from" stop must come before the "to" stop on the route');
+    }
+
+    await this.prisma.routeSegmentFare.upsert({
+      where: { fromStopId_toStopId: { fromStopId: data.fromStopId, toStopId: data.toStopId } },
+      create: { routeId, fromStopId: data.fromStopId, toStopId: data.toStopId, price: data.price },
+      update: { price: data.price },
+    });
+
+    return this.findOne(routeId);
+  }
+
+  async removeSegmentFare(id: string) {
+    const fare = await this.prisma.routeSegmentFare.findUnique({ where: { id } });
+    if (!fare) throw new NotFoundException('Segment fare override not found');
+    await this.prisma.routeSegmentFare.delete({ where: { id } });
+    return this.findOne(fare.routeId);
   }
 
   // Orders route stops by distance from origin so a newly added or removed

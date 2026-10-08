@@ -5,7 +5,7 @@ import { ArrowLeft, Search, UserX } from 'lucide-react'
 import { tripsApi, bookingsApi } from '@/api'
 import apiClient from '@/api/client'
 import { SeatGrid } from '@/components/ui/SeatGrid'
-import { formatDateTime, formatCurrency } from '@/lib/utils'
+import { formatDateTime, formatCurrency, getSegmentFare } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Select } from '@/components/shared'
 import type { Trip } from '@/types'
@@ -108,9 +108,7 @@ export function AdminNewBookingPage() {
   useEffect(() => { setPickupStopId(''); setDropoffStopId(''); setSelectedSeats([]); setPassengers([]) }, [tripId])
 
   const baseAmount =
-    pickupStop && dropoffStop
-      ? Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
-      : 0
+    trip && pickupStop && dropoffStop ? getSegmentFare(trip, pickupStop, dropoffStop) : 0
   const premiumSurcharge = Number(trip?.car.premiumSeatSurcharge ?? 0)
   const amountForSeat = (seat: number) =>
     baseAmount + (trip?.car.premiumSeatNumbers.includes(seat) ? premiumSurcharge : 0)

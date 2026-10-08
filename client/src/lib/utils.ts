@@ -6,12 +6,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Mirrors the pricing logic in api's bookings.service.ts create(): the listed segment
-// fare (stop-to-stop, from route pricing), scaled by the trip's priceOverride if set —
-// e.g. a route-wide override to 60% of the listed full-route price makes every segment
-// 60% too, so relative stop-to-stop pricing stays consistent.
+// Mirrors the pricing logic in api's bookings.service.ts create(): an explicit segment
+// fare override for this pickup->dropoff pair if one is set on the route, otherwise the
+// cumulative stop-to-stop difference — scaled by the trip's priceOverride if set, e.g. a
+// route-wide override to 60% of the listed full-route price makes every segment 60% too,
+// so relative stop-to-stop pricing (overridden or not) stays consistent.
 export function getSegmentFare(trip: Trip, pickupStop: RouteStop, dropoffStop: RouteStop): number {
-  let fare = Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
+  const override = trip.route.segmentFares?.find(
+    (f) => f.fromStopId === pickupStop.id && f.toStopId === dropoffStop.id,
+  )
+  let fare = override
+    ? Number(override.price)
+    : Number(dropoffStop.priceFromOrigin) - Number(pickupStop.priceFromOrigin)
   if (trip.priceOverride != null) {
     const stops = trip.route.routeStops
     const first = stops[0]

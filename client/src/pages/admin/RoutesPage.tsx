@@ -9,6 +9,90 @@ import { useAuthStore } from '@/stores/auth'
 import { Select } from '@/components/shared'
 import type { Route, RouteStop, Stop } from '@/types'
 
+function SegmentFareOverrides({ route }: { route: Route }) {
+  const qc = useQueryClient()
+  const [fromStopId, setFromStopId] = useState('')
+  const [toStopId, setToStopId] = useState('')
+  const [price, setPrice] = useState('')
+
+  const { mutate: setFare, isPending } = useMutation({
+    mutationFn: () => routesApi.setSegmentFare(route.id, { fromStopId, toStopId, price: Number(price) }),
+    onSuccess: () => {
+      toast.success('Segment fare override saved')
+      qc.invalidateQueries({ queryKey: ['routes'] })
+      setFromStopId(''); setToStopId(''); setPrice('')
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save segment fare'),
+  })
+
+  const { mutate: removeFare } = useMutation({
+    mutationFn: routesApi.removeSegmentFare,
+    onSuccess: () => { toast.success('Segment fare override removed'); qc.invalidateQueries({ queryKey: ['routes'] }) },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to remove segment fare'),
+  })
+
+  const stopOptions = route.routeStops.map((rs) => ({ value: rs.id, label: rs.stop.name }))
+
+  return (
+    <div className="mt-3 pt-3 border-t border-dashed border-outline-variant space-y-2">
+      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+        Segment fare overrides (independent of cumulative pricing above)
+      </label>
+      {route.segmentFares.length > 0 && (
+        <div className="space-y-1">
+          {route.segmentFares.map((fare) => {
+            const fromStop = route.routeStops.find((rs) => rs.id === fare.fromStopId)
+            const toStop = route.routeStops.find((rs) => rs.id === fare.toStopId)
+            return (
+              <div key={fare.id} className="flex items-center gap-2 text-sm pl-2">
+                <span className="text-gray-700 flex-1">{fromStop?.stop.name ?? '?'} → {toStop?.stop.name ?? '?'}</span>
+                <span className="text-primary font-semibold">{formatCurrency(fare.price)}</span>
+                <button
+                  onClick={() => removeFare(fare.id)}
+                  className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Remove override"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <Select
+          value={fromStopId}
+          onChange={setFromStopId}
+          placeholder="From stop..."
+          options={stopOptions}
+          className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <Select
+          value={toStopId}
+          onChange={setToStopId}
+          placeholder="To stop..."
+          options={stopOptions}
+          className="flex-1 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          type="number"
+          placeholder="Price (₦)"
+          className="w-32 px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        />
+        <button
+          disabled={!fromStopId || !toStopId || !price || isPending}
+          onClick={() => setFare()}
+          className="bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:brightness-110 disabled:opacity-50 transition-colors"
+        >
+          Set
+        </button>
+      </div>
+    </div>
+  )
+}
+
 type RouteStopForm = { stopId: string; distanceFromOriginKm: string; priceFromOrigin: string }
 type RouteForm = {
   originStopId: string
@@ -393,6 +477,7 @@ export function AdminRoutesPage() {
                 </div>
 
                 {isEditing && <AddStopRow route={route} stops={stops} onDone={() => setEditingRouteId(null)} />}
+                {isEditing && <SegmentFareOverrides route={route} />}
 
                 {!route.isActive && (
                   <p className="text-xs text-red-500 mt-2 font-medium">Inactive — not bookable</p>

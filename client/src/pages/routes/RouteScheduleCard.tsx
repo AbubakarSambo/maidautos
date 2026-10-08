@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Clock, Bus, Calendar, Wifi, UtensilsCrossed } from 'lucide-react'
 import { tripsApi } from '@/api'
-import { cn, formatCurrency, formatDuration } from '@/lib/utils'
+import { cn, formatCurrency, formatDuration, getSegmentFare } from '@/lib/utils'
 import type { Route, TripSearchResult } from '@/types'
 
 function dayLabel(offset: number) {
@@ -82,9 +82,7 @@ export function RouteScheduleCard({ route }: { route: Route }) {
             {trips.map((trip) => {
               const originStop = trip.route.routeStops.find((rs) => rs.stopId === route.originStopId)
               const destStop = trip.route.routeStops.find((rs) => rs.stopId === route.destinationStopId)
-              const price = originStop && destStop
-                ? Number(destStop.priceFromOrigin) - Number(originStop.priceFromOrigin)
-                : 0
+              const price = originStop && destStop ? getSegmentFare(trip, originStop, destStop) : 0
 
               return (
                 <div
