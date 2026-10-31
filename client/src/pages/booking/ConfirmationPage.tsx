@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { bookingsApi } from '@/api'
 import { BookingSteps } from '@/components/shared'
 import { useAuthStore } from '@/stores/auth'
-import { formatDateTime, formatCurrency, getWhatsAppShareUrl } from '@/lib/utils'
+import { formatDateTime, formatCurrency, getWhatsAppShareUrl, ticketStopName } from '@/lib/utils'
 import { posthog } from '@/lib/posthog'
 import type { Booking } from '@/types'
 
@@ -53,8 +53,8 @@ export function ConfirmationPage() {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading ticket...</div>
   if (!booking) return <div className="min-h-screen flex items-center justify-center text-gray-500">Ticket not found</div>
-  const from = booking.pickupStop.stop.name
-  const to = booking.dropoffStop.stop.name
+  const from = ticketStopName(booking.pickupStop.stop.name)
+  const to = ticketStopName(booking.dropoffStop.stop.name)
   const departure = formatDateTime(booking.trip.departureDateTime)
   const whatsappUrl = getWhatsAppShareUrl(booking.ticketCode, from, to, departure, booking.seatNumber)
   const passengerName = booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : booking.guestName || 'Guest'
@@ -165,10 +165,13 @@ export function ConfirmationPage() {
             </div>
 
             {/* Tagline */}
-            <div className="px-5 py-3 flex items-center justify-center gap-2 border-t border-gray-100">
-              <Bus className="w-4 h-4" style={{ color: '#610000' }} />
-              <span className="text-xs font-extrabold tracking-wide" style={{ color: '#610000' }}>LUGGAGE AT OWNER'S RISK</span>
-              <Bus className="w-4 h-4" style={{ color: '#610000' }} />
+            <div className="px-5 py-3 border-t border-gray-100 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <Bus className="w-4 h-4" style={{ color: '#610000' }} />
+                <span className="text-xs font-extrabold tracking-wide" style={{ color: '#610000' }}>LUGGAGE AT OWNER'S RISK</span>
+                <Bus className="w-4 h-4" style={{ color: '#610000' }} />
+              </div>
+              <p className="mt-1 text-[11px] font-semibold text-gray-600">Luggage allowance: 12.5 kg per passenger</p>
             </div>
 
             {/* Payment status */}
@@ -282,6 +285,7 @@ function ThermalReceipt({
       <ReceiptLine label="Payment" value={first.paymentStatus === 'PAID' ? 'PAID' : 'PENDING — pay before boarding'} />
       <div className="border-t border-dashed border-black my-2" />
       <p className="text-center text-xs font-bold">LUGGAGE AT OWNER'S RISK</p>
+      <p className="text-center text-[10px] mt-1">Luggage allowance: 12.5 kg per passenger</p>
       <p className="text-center text-[10px] mt-2">Thank you for riding with us</p>
     </div>
   )
@@ -311,7 +315,7 @@ function TicketField({ label, value, valueClassName }: { label: string; value: s
   return (
     <div className="flex items-baseline gap-3 border-b border-gray-200 py-2">
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{label}:</span>
-      <span className={`flex-1 text-right font-semibold text-gray-900 truncate ${valueClassName || ''}`}>{value}</span>
+      <span className={`flex-1 min-w-0 text-right font-semibold text-gray-900 break-words ${valueClassName || ''}`}>{value}</span>
     </div>
   )
 }

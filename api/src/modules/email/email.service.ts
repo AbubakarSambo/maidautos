@@ -109,6 +109,7 @@ export class EmailService {
             <tr>
               <td style="padding:12px 20px 18px;text-align:center;border-top:1px solid #f3f4f6;margin-top:8px">
                 <span style="color:${maroon};font-size:11px;font-weight:800;letter-spacing:0.03em">LUGGAGE AT OWNER'S RISK</span>
+                <div style="color:#4b5563;font-size:11px;font-weight:600;margin-top:4px">Luggage allowance: 12.5 kg per passenger</div>
               </td>
             </tr>
           </table>

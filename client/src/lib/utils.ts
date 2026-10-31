@@ -129,6 +129,17 @@ export function getSeatLayout(carType: CarType, capacity: number): SeatLayout {
   }
 }
 
+// Stops whose ticket label names the specific terminal passengers board/alight at.
+// Keyed by lower-cased stop name; only used for ticket display (on-screen, print, share, email).
+const TICKET_STOP_TERMINALS: Record<string, string> = {
+  abuja: 'Mabushi Bus Terminal',
+}
+
+export function ticketStopName(name: string): string {
+  const terminal = TICKET_STOP_TERMINALS[name.trim().toLowerCase()]
+  return terminal ? `${name} (${terminal})` : name
+}
+
 export function getWhatsAppShareUrl(ticketCode: string, from: string, to: string, departure: string, seat: number) {
   const text = encodeURIComponent(
     `🚌 MaidAutos Ticket\nTicket: ${ticketCode}\nRoute: ${from} → ${to}\nDeparture: ${departure}\nSeat: ${seat}\n\nBook your ride at maidautos.com`

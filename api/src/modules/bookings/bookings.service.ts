@@ -624,8 +624,8 @@ export class BookingsService {
     const firstName = booking.user?.firstName || booking.guestName || 'Passenger';
 
     await this.emailService.sendTicketEmail(email, firstName, booking.ticketCode, {
-      from: booking.pickupStop.stop.name,
-      to: booking.dropoffStop.stop.name,
+      from: ticketStopName(booking.pickupStop.stop.name),
+      to: ticketStopName(booking.dropoffStop.stop.name),
       // Explicit timeZone — this runs server-side, where the process timezone (e.g. UTC
       // on Railway) would otherwise silently shift the printed departure time.
       departure: booking.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }),
@@ -650,6 +650,17 @@ export class BookingsService {
     }
     return code;
   }
+}
+
+// Stops whose ticket label names the specific terminal passengers board/alight at.
+// Keyed by lower-cased stop name; only used for ticket display (the ticket email; the client has its own copy).
+const TICKET_STOP_TERMINALS: Record<string, string> = {
+  abuja: 'Mabushi Bus Terminal',
+};
+
+function ticketStopName(name: string): string {
+  const terminal = TICKET_STOP_TERMINALS[name.trim().toLowerCase()];
+  return terminal ? `${name} (${terminal})` : name;
 }
 
 // Compares phone numbers by their last 10 digits so +234 803..., 234803... and 0803...
