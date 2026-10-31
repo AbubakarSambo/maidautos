@@ -93,6 +93,53 @@ function SegmentFareOverrides({ route }: { route: Route }) {
   )
 }
 
+// Read-only view of every pickup->dropoff segment on a route and the fare it resolves to,
+// flagging segments that have no explicit override and fall back to cumulative pricing.
+function SegmentFareSummary({ route }: { route: Route }) {
+  const stops = route.routeStops
+  const segments = stops.flatMap((from, i) =>
+    stops.slice(i + 1).map((to) => {
+      const override = route.segmentFares.find((f) => f.fromStopId === from.id && f.toStopId === to.id)
+      return {
+        key: `${from.id}-${to.id}`,
+        label: `${from.stop.name} → ${to.stop.name}`,
+        price: override ? Number(override.price) : Number(to.priceFromOrigin) - Number(from.priceFromOrigin),
+        isOverride: !!override,
+      }
+    }),
+  )
+  if (segments.length === 0) return null
+
+  const missing = segments.filter((s) => !s.isOverride).length
+
+  return (
+    <details className="mt-3 pt-3 border-t border-dashed border-outline-variant group">
+      <summary className="cursor-pointer text-xs font-bold uppercase tracking-wide select-none">
+        <span className="text-gray-500">Segment fares</span>
+        <span className="ml-2 normal-case font-semibold text-primary">{segments.length - missing} overridden</span>
+        {missing > 0 && (
+          <span className="ml-2 normal-case font-semibold text-amber-600">· {missing} using cumulative price</span>
+        )}
+      </summary>
+      <div className="space-y-1 mt-2">
+        {segments.map((s) => (
+          <div key={s.key} className="flex items-center gap-2 text-sm pl-2">
+            <span className="text-gray-700 flex-1">{s.label}</span>
+            {s.isOverride ? (
+              <span className="text-[10px] font-bold uppercase text-primary bg-primary/10 px-1.5 py-0.5 rounded">override</span>
+            ) : (
+              <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">no override</span>
+            )}
+            <span className={s.isOverride ? 'text-primary font-semibold w-24 text-right' : 'text-amber-700 font-semibold w-24 text-right'}>
+              {formatCurrency(s.price)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
 type RouteStopForm = { stopId: string; distanceFromOriginKm: string; priceFromOrigin: string }
 type RouteForm = {
   originStopId: string
@@ -477,7 +524,7 @@ export function AdminRoutesPage() {
                 </div>
 
                 {isEditing && <AddStopRow route={route} stops={stops} onDone={() => setEditingRouteId(null)} />}
-                {isEditing && <SegmentFareOverrides route={route} />}
+                {isEditing ? <SegmentFareOverrides route={route} /> : <SegmentFareSummary route={route} />}
 
                 {!route.isActive && (
                   <p className="text-xs text-red-500 mt-2 font-medium">Inactive — not bookable</p>
