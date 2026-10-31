@@ -50,6 +50,9 @@ enum TripStatus {
 enum BookingStatus {
   CONFIRMED
   CANCELLED
+  // Superseded by a paid change to another trip; the replacement booking points back
+  // here via changedFromBookingId. Frees the seat and is excluded from revenue.
+  CHANGED
   NO_SHOW
   COMPLETED
 }
@@ -191,22 +194,22 @@ model RouteSegmentFare {
 }
 
 model Car {
-  id          String    @id @default(uuid())
-  plateNumber String    @unique @map("plate_number")
-  make        String
-  model       String
-  year        Int
-  type        CarType
-  capacity    Int
-  hasAC       Boolean   @default(true) @map("has_ac")
-  hasWifi     Boolean   @default(false) @map("has_wifi")
-  hasMeals    Boolean   @default(false) @map("has_meals")
-  status      CarStatus @default(ACTIVE)
-  photos      String[]
-  notes       String?
+  id                   String    @id @default(uuid())
+  plateNumber          String    @unique @map("plate_number")
+  make                 String
+  model                String
+  year                 Int
+  type                 CarType
+  capacity             Int
+  hasAC                Boolean   @default(true) @map("has_ac")
+  hasWifi              Boolean   @default(false) @map("has_wifi")
+  hasMeals             Boolean   @default(false) @map("has_meals")
+  status               CarStatus @default(ACTIVE)
+  photos               String[]
+  notes                String?
   // Seat numbers (per this car's layout) that cost extra — e.g. front-row/legroom seats.
-  premiumSeatNumbers   Int[]   @default([]) @map("premium_seat_numbers")
-  premiumSeatSurcharge Decimal @default(0) @db.Decimal(10, 2) @map("premium_seat_surcharge")
+  premiumSeatNumbers   Int[]     @default([]) @map("premium_seat_numbers")
+  premiumSeatSurcharge Decimal   @default(0) @map("premium_seat_surcharge") @db.Decimal(10, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -280,30 +283,36 @@ model TripStatusUpdate {
 }
 
 model Booking {
-  id                 String        @id @default(uuid())
-  tripId             String        @map("trip_id")
-  userId             String?       @map("user_id")
-  guestName          String?       @map("guest_name")
-  guestEmail         String?       @map("guest_email")
-  guestPhone         String?       @map("guest_phone")
-  nokName            String?       @map("nok_name")
-  nokPhone           String?       @map("nok_phone")
-  seatNumber         Int           @map("seat_number")
-  pickupStopId       String        @map("pickup_stop_id")
-  dropoffStopId      String        @map("dropoff_stop_id")
-  amount             Decimal       @db.Decimal(10, 2)
+  id                   String        @id @default(uuid())
+  tripId               String        @map("trip_id")
+  userId               String?       @map("user_id")
+  guestName            String?       @map("guest_name")
+  guestEmail           String?       @map("guest_email")
+  guestPhone           String?       @map("guest_phone")
+  nokName              String?       @map("nok_name")
+  nokPhone             String?       @map("nok_phone")
+  seatNumber           Int           @map("seat_number")
+  pickupStopId         String        @map("pickup_stop_id")
+  dropoffStopId        String        @map("dropoff_stop_id")
+  amount               Decimal       @db.Decimal(10, 2)
   // Bookings created together in one multi-seat purchase share a groupId, so they can be
   // paid for with a single Paystack charge and shown together on the confirmation page.
-  groupId            String        @map("group_id")
-  paymentMethod      PaymentMethod @map("payment_method")
-  paymentStatus      PaymentStatus @default(PENDING) @map("payment_status")
+  groupId              String        @map("group_id")
+  paymentMethod        PaymentMethod @map("payment_method")
+  paymentStatus        PaymentStatus @default(PENDING) @map("payment_status")
   // No longer @unique — every booking in a group shares the same reference once payment is initialized.
-  paystackReference  String?       @map("paystack_reference")
-  paystackAccessCode String?       @map("paystack_access_code")
-  paymentUrl         String?       @map("payment_url")
-  ticketCode         String        @unique @map("ticket_code")
-  status             BookingStatus @default(CONFIRMED)
-  bookedByAdminId    String?       @map("booked_by_admin_id")
+  paystackReference    String?       @map("paystack_reference")
+  paystackAccessCode   String?       @map("paystack_access_code")
+  paymentUrl           String?       @map("payment_url")
+  ticketCode           String        @unique @map("ticket_code")
+  status               BookingStatus @default(CONFIRMED)
+  bookedByAdminId      String?       @map("booked_by_admin_id")
+  // Set on a booking created by changing an earlier one to another trip. The customer
+  // pays changeFee + changeFareDifference (not amount) for it; amount stays the ticket's
+  // value (original amount + fare difference) so future change fees are based on it.
+  changedFromBookingId String?       @map("changed_from_booking_id")
+  changeFee            Decimal?      @map("change_fee") @db.Decimal(10, 2)
+  changeFareDifference Decimal?      @map("change_fare_difference") @db.Decimal(10, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -313,8 +322,11 @@ model Booking {
   bookedByAdmin User?     @relation("AdminBookings", fields: [bookedByAdminId], references: [id])
   pickupStop    RouteStop @relation("PickupStop", fields: [pickupStopId], references: [id])
   dropoffStop   RouteStop @relation("DropoffStop", fields: [dropoffStopId], references: [id])
+  changedFrom   Booking?  @relation("BookingChanges", fields: [changedFromBookingId], references: [id])
+  changedTo     Booking[] @relation("BookingChanges")
 
   @@index([tripId])
+  @@index([changedFromBookingId])
   @@index([userId])
   @@index([ticketCode])
   @@index([groupId])

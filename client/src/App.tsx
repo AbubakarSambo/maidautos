@@ -13,6 +13,7 @@ import {
   CheckoutPage,
   ConfirmationPage,
   PaymentCallbackPage,
+  ManageBookingPage,
   LoginPage,
   GoogleCallbackPage,
   RegisterPage,
@@ -61,6 +62,7 @@ function App() {
           <Route path="/booking/checkout" element={<CheckoutPage />} />
           <Route path="/booking/confirmation/:ticketCode" element={<ConfirmationPage />} />
           <Route path="/booking/callback" element={<PaymentCallbackPage />} />
+          <Route path="/booking/manage" element={<ManageBookingPage />} />
 
           {/* Auth */}
           <Route element={<GuestRoute />}>

@@ -22,7 +22,7 @@ export function AdminTripManifestPage() {
   })
 
   const passengers = allBookings
-    .filter((b) => b.status !== 'CANCELLED')
+    .filter((b) => b.status !== 'CANCELLED' && b.status !== 'CHANGED')
     .sort((a, b) => a.seatNumber - b.seatNumber)
 
   const totalRevenue = passengers.reduce((sum, b) => sum + Number(b.amount), 0)

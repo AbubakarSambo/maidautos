@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
 import { Public, OptionalAuth, Roles, CurrentUser } from '../../common';
 
 @ApiTags('Bookings')
@@ -50,6 +51,29 @@ export class BookingsController {
   @Post()
   create(@Body() dto: CreateBookingDto, @CurrentUser() user: any) {
     return this.bookingsService.create(dto, user);
+  }
+
+  // Self-service "manage booking". Logged-in owners need only the ticket code; guests
+  // also prove ownership with the booking's email or phone. POST so contact details
+  // stay out of URLs/logs.
+  @OptionalAuth()
+  @Post('manage/lookup')
+  manageLookup(@Body() dto: ManageBookingLookupDto, @CurrentUser() user: any) {
+    return this.bookingsService.lookupForManagement(dto, user);
+  }
+
+  @OptionalAuth()
+  @Post('manage/quote')
+  manageQuote(@Body() dto: ChangeBookingDto, @CurrentUser() user: any) {
+    return this.bookingsService.quoteChange(dto, user);
+  }
+
+  // Holds the new seat and returns a groupId; the client then pays via
+  // POST /paystack/initialize/:groupId, and the change completes once payment confirms.
+  @OptionalAuth()
+  @Post('manage/change')
+  manageChange(@Body() dto: ChangeBookingDto, @CurrentUser() user: any) {
+    return this.bookingsService.createChange(dto, user);
   }
 
   @ApiBearerAuth()

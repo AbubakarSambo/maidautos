@@ -3,7 +3,7 @@ export type CarType = 'SEDAN' | 'SIENA' | 'HIACE' | 'COASTER' | 'BUS'
 export type CarStatus = 'ACTIVE' | 'MAINTENANCE' | 'RETIRED'
 export type DriverStatus = 'AVAILABLE' | 'ON_TRIP' | 'OFF_DUTY'
 export type TripStatus = 'SCHEDULED' | 'BOARDING' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED'
-export type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW' | 'COMPLETED'
+export type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW' | 'COMPLETED' | 'CHANGED'
 export type PaymentMethod = 'PAYSTACK' | 'CASH'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED'
 
@@ -144,12 +144,37 @@ export interface Booking {
   ticketCode: string
   status: BookingStatus
   bookedByAdminId: string | null
+  changedFromBookingId: string | null
+  changeFee: number | null
+  changeFareDifference: number | null
+  // Only on ticket-code lookups: the paid replacement ticket for a CHANGED booking.
+  changedTo?: { ticketCode: string }[]
   createdAt: string
   trip: Trip
   user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'phone'> | null
   bookedByAdmin: Pick<User, 'id' | 'firstName' | 'lastName'> | null
   pickupStop: RouteStop
   dropoffStop: RouteStop
+}
+
+export interface ManageBookingResult {
+  booking: Booking
+  change: {
+    allowed: boolean
+    reason: string | null
+    cutoffHours: number
+    feeRate: number
+    fee: number
+  }
+}
+
+export interface BookingChangeQuote {
+  currentValue: number
+  newFare: number
+  changeFee: number
+  fareDifference: number
+  totalDue: number
+  newTicketValue: number
 }
 
 export interface SeatAvailability {

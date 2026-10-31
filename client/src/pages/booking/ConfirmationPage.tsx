@@ -96,6 +96,17 @@ export function ConfirmationPage() {
       <ThermalReceipt bookings={bookings} totalAmount={totalAmount} from={from} to={to} departure={departure} passengerName={passengerName} />
       <div className="flex-1 flex items-center justify-center p-4 print:hidden">
       <div className="max-w-sm w-full space-y-4">
+        {booking.status === 'CHANGED' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 print:hidden">
+            This ticket was changed to another trip and is no longer valid.
+            {booking.changedTo?.[0] && (
+              <> Your new ticket is{' '}
+                <Link to={`/booking/confirmation/${booking.changedTo[0].ticketCode}`} className="font-bold underline">{booking.changedTo[0].ticketCode}</Link>.
+              </>
+            )}
+          </div>
+        )}
+
         {/* Success badge */}
         <div className="text-center">
           <div className="w-16 h-16 bg-green-600/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -185,6 +196,15 @@ export function ConfirmationPage() {
             <Printer className="w-4 h-4" /> Print
           </button>
         </div>
+
+        {booking.status === 'CONFIRMED' && booking.paymentStatus === 'PAID' && (
+          <Link
+            to={`/booking/manage?code=${booking.ticketCode}`}
+            className="block text-center text-sm font-semibold text-primary hover:underline print:hidden"
+          >
+            Need a different date? Change this booking
+          </Link>
+        )}
 
         {isAuthenticated ? (
           <Link

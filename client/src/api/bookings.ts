@@ -32,6 +32,16 @@ export const bookingsApi = {
     }[]
   }) => apiClient.post('/bookings', data).then((r) => r.data.data),
 
+  // Self-service management: contact (email/phone) is required unless logged in as the owner.
+  manageLookup: (data: { ticketCode: string; contact?: string }): Promise<import('@/types').ManageBookingResult> =>
+    apiClient.post('/bookings/manage/lookup', data).then((r) => r.data.data),
+
+  manageQuote: (data: { ticketCode: string; contact?: string; tripId: string; seatNumber: number }): Promise<import('@/types').BookingChangeQuote> =>
+    apiClient.post('/bookings/manage/quote', data).then((r) => r.data.data),
+
+  manageChange: (data: { ticketCode: string; contact?: string; tripId: string; seatNumber: number }): Promise<import('@/types').BookingChangeQuote & { groupId: string; bookingId: string }> =>
+    apiClient.post('/bookings/manage/change', data).then((r) => r.data.data),
+
   cancel: (id: string) =>
     apiClient.patch(`/bookings/${id}/cancel`).then((r) => r.data.data),
 

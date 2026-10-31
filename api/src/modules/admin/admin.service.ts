@@ -22,13 +22,13 @@ export class AdminService {
       this.prisma.trip.count({ where: { departureDateTime: { gte: today, lt: tomorrow } } }),
       this.prisma.booking.count({ where: { createdAt: { gte: today, lt: tomorrow }, status: 'CONFIRMED' } }),
       this.prisma.booking.aggregate({
-        where: { createdAt: { gte: today, lt: tomorrow }, paymentStatus: 'PAID' },
-        _sum: { amount: true },
+        where: { createdAt: { gte: today, lt: tomorrow }, paymentStatus: 'PAID', status: { not: 'CHANGED' } },
+        _sum: { amount: true, changeFee: true },
       }),
-      this.prisma.booking.count({ where: { status: { not: 'CANCELLED' } } }),
+      this.prisma.booking.count({ where: { status: { notIn: ['CANCELLED', 'CHANGED'] } } }),
       this.prisma.booking.aggregate({
-        where: { paymentStatus: 'PAID' },
-        _sum: { amount: true },
+        where: { paymentStatus: 'PAID', status: { not: 'CHANGED' } },
+        _sum: { amount: true, changeFee: true },
       }),
       this.prisma.booking.count({ where: { paymentStatus: 'PENDING', status: 'CONFIRMED' } }),
     ]);
@@ -37,18 +37,20 @@ export class AdminService {
       today: {
         trips: todaysTrips,
         bookings: totalBookingsToday,
-        revenue: revenueToday._sum.amount || 0,
+        revenue: Number(revenueToday._sum.amount || 0) + Number(revenueToday._sum.changeFee || 0),
       },
       allTime: {
         bookings: totalBookingsAllTime,
-        revenue: totalRevenue._sum.amount || 0,
+        revenue: Number(totalRevenue._sum.amount || 0) + Number(totalRevenue._sum.changeFee || 0),
         pendingPayments,
       },
     };
   }
 
   async getRevenueByRoute(startDate?: string, endDate?: string) {
-    const where: any = { paymentStatus: 'PAID' };
+    // A changed booking's value carries over to its replacement (amount + changeFee),
+    // so the superseded original is excluded to avoid counting the ticket twice.
+    const where: any = { paymentStatus: 'PAID', status: { not: 'CHANGED' } };
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate);
@@ -67,7 +69,7 @@ export class AdminService {
       const key = b.trip.routeId;
       const label = `${b.trip.route.originStop.name} → ${b.trip.route.destinationStop.name}`;
       const existing = byRoute.get(key) || { label, revenue: 0, count: 0 };
-      existing.revenue += Number(b.amount);
+      existing.revenue += Number(b.amount) + Number(b.changeFee ?? 0);
       existing.count += 1;
       byRoute.set(key, existing);
     }

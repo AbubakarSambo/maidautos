@@ -16,10 +16,11 @@ export class PaystackController {
   @OptionalAuth()
   @Post('initialize/:groupId')
   async initialize(@Param('groupId') groupId: string, @CurrentUser() user: any) {
-    const bookings = await this.bookingsService.findByGroupId(groupId);
-    const email = user?.email || bookings[0].guestEmail;
-    if (!email) throw new Error('No email available for payment');
-    const totalAmountKobo = bookings.reduce((sum, b) => sum + Math.round(Number(b.amount) * 100), 0);
+    // For a booking change this is the change fee + fare difference, not the ticket value.
+    const { bookings, email: bookingEmail, totalAmountKobo } = await this.bookingsService.findGroupForPayment(groupId);
+    if (bookings.some((b) => b.paymentStatus === 'PAID')) throw new BadRequestException('This booking is already paid');
+    const email = user?.email || bookingEmail;
+    if (!email) throw new BadRequestException('An email address is needed to pay online');
     return this.paystackService.initializePayment(groupId, email, totalAmountKobo);
   }
 

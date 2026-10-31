@@ -174,6 +174,7 @@ export function SearchPage() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#how-it-works" className="text-sm font-bold text-primary border-b-2 border-primary pb-1">How It Works</a>
             <Link to="/routes" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Routes</Link>
+            <Link to="/booking/manage" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Manage Booking</Link>
             <a href="#why-us" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Why Us</a>
             <a href="#contact" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Contact</a>
             <div className="h-6 w-px bg-outline-variant" />
@@ -225,6 +226,7 @@ export function SearchPage() {
           <div className="md:hidden border-t border-outline-variant px-6 py-4 flex flex-col gap-4 bg-surface">
             <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold text-primary">How It Works</a>
             <Link to="/routes" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Routes</Link>
+            <Link to="/booking/manage" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Manage Booking</Link>
             <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Why Us</a>
             <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-on-surface-variant">Contact</a>
             <div className="h-px w-full bg-outline-variant" />
@@ -618,6 +620,7 @@ export function SearchPage() {
             <ul className="space-y-5">
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="#how-it-works">How It Works</a></li>
               <li><Link className="text-sm text-white/60 hover:text-white transition-colors" to="/routes">Routes</Link></li>
+              <li><Link className="text-sm text-white/60 hover:text-white transition-colors" to="/booking/manage">Manage Booking</Link></li>
               <li><a className="text-sm text-white/60 hover:text-white transition-colors" href="#why-us">Why MaidAutos</a></li>
             </ul>
           </div>

@@ -9,12 +9,20 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
 import { resolveSegmentFare } from '../routes/segment-fare.util';
 import * as crypto from 'crypto';
 
 // A booking awaiting online payment holds its seat for this long before the
 // hold expires and the seat becomes bookable again (abandoned checkouts).
 const PENDING_PAYMENT_HOLD_MINUTES = 15;
+
+// Self-service booking changes: a customer can move a paid booking to another trip on
+// the same pickup->dropoff stops up to this many hours before the original departure,
+// paying this share of the ticket's value as a fee (plus any fare increase; a cheaper
+// new trip is not refunded the difference).
+export const BOOKING_CHANGE_CUTOFF_HOURS = 6;
+export const BOOKING_CHANGE_FEE_RATE = 0.2;
 
 @Injectable()
 export class BookingsService {
@@ -103,6 +111,7 @@ export class BookingsService {
         },
         pickupStop: { include: { stop: true } },
         dropoffStop: { include: { stop: true } },
+        changedTo: { where: { paymentStatus: 'PAID' }, select: { ticketCode: true } },
       },
     });
     if (!booking) throw new NotFoundException('Ticket not found');
@@ -146,27 +155,7 @@ export class BookingsService {
     // on every booking attempt instead.
     await this.expireStaleHolds(dto.tripId);
 
-    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
-    const routeStopOrderMap = new Map(trip.route.routeStops.map((rs) => [rs.id, rs.order]));
-    const seatBookings = await this.prisma.booking.findMany({
-      where: {
-        tripId: dto.tripId,
-        seatNumber: { in: seatNumbers },
-        status: { in: ['CONFIRMED', 'COMPLETED'] },
-        OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
-      },
-    });
-    for (const seatNumber of seatNumbers) {
-      const conflictingBooking = seatBookings.find((b) => {
-        if (b.seatNumber !== seatNumber) return false;
-        const bPickupOrder = routeStopOrderMap.get(b.pickupStopId) ?? -1;
-        const bDropoffOrder = routeStopOrderMap.get(b.dropoffStopId) ?? -1;
-        return bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;
-      });
-      if (conflictingBooking) {
-        throw new ConflictException(`Seat ${seatNumber} is already booked for this segment`);
-      }
-    }
+    await this.assertSeatsAvailable(dto.tripId, trip.route.routeStops, pickupStop, dropoffStop, seatNumbers);
 
     // Calculate base amount: an explicit segment fare override for this pickup->dropoff
     // pair if one is set, otherwise priceFromOrigin[dropoff] - priceFromOrigin[pickup]. If
@@ -258,6 +247,231 @@ export class BookingsService {
     return { bookings, groupId, totalAmount: bookings.reduce((sum, b) => sum + Number(b.amount), 0) };
   }
 
+  // Throws if any of the seats is already held by a live booking whose segment overlaps
+  // pickup->dropoff on this trip. Unpaid bookings only count while their hold is fresh.
+  private async assertSeatsAvailable(
+    tripId: string,
+    routeStops: { id: string; order: number }[],
+    pickupStop: { order: number },
+    dropoffStop: { order: number },
+    seatNumbers: number[],
+  ) {
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
+    const routeStopOrderMap = new Map(routeStops.map((rs) => [rs.id, rs.order]));
+    const seatBookings = await this.prisma.booking.findMany({
+      where: {
+        tripId,
+        seatNumber: { in: seatNumbers },
+        status: { in: ['CONFIRMED', 'COMPLETED'] },
+        OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
+      },
+    });
+    for (const seatNumber of seatNumbers) {
+      const conflictingBooking = seatBookings.find((b) => {
+        if (b.seatNumber !== seatNumber) return false;
+        const bPickupOrder = routeStopOrderMap.get(b.pickupStopId) ?? -1;
+        const bDropoffOrder = routeStopOrderMap.get(b.dropoffStopId) ?? -1;
+        return bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;
+      });
+      if (conflictingBooking) {
+        throw new ConflictException(`Seat ${seatNumber} is already booked for this segment`);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Self-service booking changes
+  // ---------------------------------------------------------------------------
+
+  // Loads a booking by ticket code and checks the caller may manage it: an admin, the
+  // logged-in passenger who owns it, or anyone who knows the email/phone it was made with.
+  private async loadManageableBooking(dto: ManageBookingLookupDto, requestingUser?: any) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { ticketCode: dto.ticketCode.trim().toUpperCase() },
+      include: {
+        trip: {
+          include: {
+            route: { include: { originStop: true, destinationStop: true } },
+            car: true,
+          },
+        },
+        pickupStop: { include: { stop: true } },
+        dropoffStop: { include: { stop: true } },
+        user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+      },
+    });
+    // Same error for "no such ticket" and "wrong contact" so ticket codes can't be probed.
+    const notFound = new NotFoundException('No booking found for that ticket code and email/phone');
+    if (!booking) throw notFound;
+
+    const isAdmin = requestingUser && requestingUser.role !== 'PASSENGER';
+    const isOwner = requestingUser && booking.userId && booking.userId === requestingUser.id;
+    if (isAdmin || isOwner) return booking;
+
+    const contact = dto.contact?.trim();
+    if (!contact) throw notFound;
+    const emails = [booking.guestEmail, booking.user?.email].filter(Boolean).map((e) => e!.toLowerCase());
+    const phones = [booking.guestPhone, booking.user?.phone].filter(Boolean).map((p) => normalizePhone(p!));
+    const matches = contact.includes('@')
+      ? emails.includes(contact.toLowerCase())
+      : normalizePhone(contact).length >= 7 && phones.includes(normalizePhone(contact));
+    if (!matches) throw notFound;
+    return booking;
+  }
+
+  // Why this booking can't be changed right now, or null if it can.
+  private changeBlockedReason(booking: {
+    status: string;
+    paymentStatus: string;
+    trip: { status: string; departureDateTime: Date };
+  }): string | null {
+    if (booking.status === 'CHANGED') return 'This ticket has already been changed to another trip';
+    if (booking.status !== 'CONFIRMED') return 'Only confirmed bookings can be changed';
+    if (booking.paymentStatus !== 'PAID') return 'This booking has not been paid for yet';
+    if (booking.trip.status !== 'SCHEDULED') return 'This trip is no longer open for changes';
+    const cutoff = booking.trip.departureDateTime.getTime() - BOOKING_CHANGE_CUTOFF_HOURS * 60 * 60 * 1000;
+    if (Date.now() > cutoff) {
+      return `Bookings can only be changed up to ${BOOKING_CHANGE_CUTOFF_HOURS} hours before departure`;
+    }
+    return null;
+  }
+
+  async lookupForManagement(dto: ManageBookingLookupDto, requestingUser?: any) {
+    const booking = await this.loadManageableBooking(dto, requestingUser);
+    const blockedReason = this.changeBlockedReason(booking);
+    return {
+      booking,
+      change: {
+        allowed: blockedReason === null,
+        reason: blockedReason,
+        cutoffHours: BOOKING_CHANGE_CUTOFF_HOURS,
+        feeRate: BOOKING_CHANGE_FEE_RATE,
+        fee: Math.round(Number(booking.amount) * BOOKING_CHANGE_FEE_RATE),
+      },
+    };
+  }
+
+  // Validates moving the booking to dto.tripId / dto.seatNumber and prices it. Used both
+  // to show the customer a quote and, authoritatively, when creating the change.
+  private async prepareChange(dto: ChangeBookingDto, requestingUser?: any) {
+    const booking = await this.loadManageableBooking(dto, requestingUser);
+    const blockedReason = this.changeBlockedReason(booking);
+    if (blockedReason) throw new BadRequestException(blockedReason);
+    if (dto.tripId === booking.tripId) {
+      throw new BadRequestException('Choose a different trip — seat changes on the same trip are not supported');
+    }
+
+    const newTrip = await this.prisma.trip.findUnique({
+      where: { id: dto.tripId },
+      include: {
+        route: { include: { routeStops: { orderBy: { order: 'asc' } }, segmentFares: true } },
+        car: true,
+      },
+    });
+    if (!newTrip) throw new NotFoundException('Trip not found');
+    if (newTrip.status !== 'SCHEDULED' || newTrip.departureDateTime.getTime() <= Date.now()) {
+      throw new BadRequestException('That trip is not open for booking');
+    }
+    if (dto.seatNumber > newTrip.car.capacity) throw new BadRequestException('Invalid seat number');
+
+    // Same physical pickup and dropoff stops; the new trip may be on a different route.
+    const pickupStop = newTrip.route.routeStops.find((rs) => rs.stopId === booking.pickupStop.stopId);
+    const dropoffStop = newTrip.route.routeStops.find((rs) => rs.stopId === booking.dropoffStop.stopId);
+    if (!pickupStop || !dropoffStop || pickupStop.order >= dropoffStop.order) {
+      throw new BadRequestException('That trip does not serve the same pickup and dropoff stops');
+    }
+
+    await this.expireStaleHolds(newTrip.id);
+    await this.assertSeatsAvailable(newTrip.id, newTrip.route.routeStops, pickupStop, dropoffStop, [dto.seatNumber]);
+
+    const baseFare = resolveSegmentFare(newTrip.route, pickupStop, dropoffStop, newTrip.priceOverride);
+    if (baseFare <= 0) throw new BadRequestException('Invalid price calculation for this segment');
+    const newFare =
+      baseFare +
+      (newTrip.car.premiumSeatNumbers.includes(dto.seatNumber) ? Number(newTrip.car.premiumSeatSurcharge) : 0);
+
+    const currentValue = Number(booking.amount);
+    const changeFee = Math.round(currentValue * BOOKING_CHANGE_FEE_RATE);
+    const fareDifference = Math.max(0, Math.round((newFare - currentValue) * 100) / 100);
+
+    return {
+      booking,
+      newTrip,
+      pickupStop,
+      dropoffStop,
+      quote: {
+        currentValue,
+        newFare,
+        changeFee,
+        fareDifference,
+        totalDue: changeFee + fareDifference,
+        // The ticket keeps the higher of what was paid and the new fare — no refund down.
+        newTicketValue: currentValue + fareDifference,
+      },
+    };
+  }
+
+  async quoteChange(dto: ChangeBookingDto, requestingUser?: any) {
+    const { quote } = await this.prepareChange(dto, requestingUser);
+    return quote;
+  }
+
+  // Creates the replacement booking on the new trip as an unpaid Paystack hold. The
+  // original stays valid until the change fee is paid; confirmPaystackPayment then marks
+  // it CHANGED, which frees its seat. Returns the groupId to initialize payment for.
+  async createChange(dto: ChangeBookingDto, requestingUser?: any) {
+    const { booking, newTrip, pickupStop, dropoffStop, quote } = await this.prepareChange(dto, requestingUser);
+
+    // Drop any earlier unpaid change attempt for this booking so it doesn't hold a seat.
+    await this.prisma.booking.updateMany({
+      where: { changedFromBookingId: booking.id, paymentStatus: 'PENDING', status: 'CONFIRMED' },
+      data: { status: 'CANCELLED' },
+    });
+
+    const replacement = await this.prisma.booking.create({
+      data: {
+        tripId: newTrip.id,
+        userId: booking.userId,
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        guestPhone: booking.guestPhone,
+        nokName: booking.nokName,
+        nokPhone: booking.nokPhone,
+        seatNumber: dto.seatNumber,
+        groupId: crypto.randomUUID(),
+        pickupStopId: pickupStop.id,
+        dropoffStopId: dropoffStop.id,
+        amount: quote.newTicketValue,
+        paymentMethod: 'PAYSTACK',
+        paymentStatus: 'PENDING',
+        status: 'CONFIRMED',
+        ticketCode: this.generateTicketCode(),
+        changedFromBookingId: booking.id,
+        changeFee: quote.changeFee,
+        changeFareDifference: quote.fareDifference,
+      },
+    });
+
+    return { groupId: replacement.groupId, bookingId: replacement.id, ...quote };
+  }
+
+  // Bookings in a group plus what's actually owed for each: the full amount for a new
+  // booking, or just the change fee + fare difference for a change.
+  async findGroupForPayment(groupId: string) {
+    const bookings = await this.prisma.booking.findMany({
+      where: { groupId },
+      include: { user: { select: { email: true } } },
+    });
+    if (bookings.length === 0) throw new NotFoundException('Booking group not found');
+    const amountDue = (b: (typeof bookings)[number]) =>
+      b.changedFromBookingId ? Number(b.changeFee ?? 0) + Number(b.changeFareDifference ?? 0) : Number(b.amount);
+    return {
+      bookings,
+      email: bookings.find((b) => b.guestEmail)?.guestEmail ?? bookings.find((b) => b.user?.email)?.user?.email ?? null,
+      totalAmountKobo: bookings.reduce((sum, b) => sum + Math.round(amountDue(b) * 100), 0),
+    };
+  }
+
   // Cancels any booking on this trip that's still an unpaid, expired Paystack hold —
   // self-healing cleanup since nothing else marks these CANCELLED on its own.
   private async expireStaleHolds(tripId: string) {
@@ -312,6 +526,7 @@ export class BookingsService {
     }
 
     if (booking.status === 'CANCELLED') throw new BadRequestException('Booking is already cancelled');
+    if (booking.status === 'CHANGED') throw new BadRequestException('This booking was changed to another trip — manage the new ticket instead');
 
     const updated = await this.prisma.booking.update({
       where: { id },
@@ -370,6 +585,18 @@ export class BookingsService {
       data: { paymentStatus: 'PAID' },
     });
 
+    // A paid change supersedes the booking it was made from, releasing its seat.
+    const changedFromIds = bookings.map((b) => b.changedFromBookingId).filter((id): id is string => !!id);
+    if (changedFromIds.length > 0) {
+      const superseded = await this.prisma.booking.updateMany({
+        where: { id: { in: changedFromIds }, status: 'CONFIRMED' },
+        data: { status: 'CHANGED' },
+      });
+      if (!alreadyPaid && superseded.count < changedFromIds.length) {
+        this.logger.warn(`Change payment ${reference} confirmed but original booking(s) ${changedFromIds.join(', ')} were no longer CONFIRMED`);
+      }
+    }
+
     if (!alreadyPaid) {
       for (const booking of bookings) {
         this.sendTicketConfirmationEmail(booking).catch((err) => {
@@ -423,4 +650,10 @@ export class BookingsService {
     }
     return code;
   }
+}
+
+// Compares phone numbers by their last 10 digits so +234 803..., 234803... and 0803...
+// all match.
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '').slice(-10);
 }

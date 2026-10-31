@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
-import { Bus, ArrowRight, Calendar, UserCircle, Printer } from 'lucide-react'
+import { Bus, ArrowRight, Calendar, UserCircle, Printer, Repeat } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -29,8 +29,9 @@ export function MyBookingsPage() {
     }
   }
 
-  const upcoming = bookings.filter((b) => new Date(b.trip.departureDateTime) >= new Date() && b.status !== 'CANCELLED')
-  const past = bookings.filter((b) => new Date(b.trip.departureDateTime) < new Date() || b.status === 'CANCELLED')
+  const isInactive = (b: Booking) => b.status === 'CANCELLED' || b.status === 'CHANGED'
+  const upcoming = bookings.filter((b) => new Date(b.trip.departureDateTime) >= new Date() && !isInactive(b))
+  const past = bookings.filter((b) => new Date(b.trip.departureDateTime) < new Date() || isInactive(b))
 
   if (isLoading) return <div className="flex items-center justify-center py-16 text-gray-500">Loading...</div>
 
@@ -56,6 +57,7 @@ export function MyBookingsPage() {
                   booking={b}
                   onClick={() => navigate(`/booking/confirmation/${b.ticketCode}`)}
                   onCancel={b.trip.status === 'SCHEDULED' ? () => handleCancel(b) : undefined}
+                  onChange={b.trip.status === 'SCHEDULED' && b.paymentStatus === 'PAID' ? () => navigate(`/booking/manage?code=${b.ticketCode}`) : undefined}
                   isCancelling={isCancelling && cancellingId === b.id}
                 />
               ))}
@@ -91,12 +93,14 @@ function BookingCard({
   onClick,
   faded,
   onCancel,
+  onChange,
   isCancelling,
 }: {
   booking: Booking
   onClick: () => void
   faded?: boolean
   onCancel?: () => void
+  onChange?: () => void
   isCancelling?: boolean
 }) {
   return (
@@ -128,6 +132,14 @@ function BookingCard({
         >
           <Printer className="w-3.5 h-3.5" /> Print
         </button>
+        {onChange && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onChange() }}
+            className="flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:bg-primary/5 py-2 px-3 rounded-lg border border-primary/30 transition-colors"
+          >
+            <Repeat className="w-3.5 h-3.5" /> Change trip
+          </button>
+        )}
         {onCancel && (
           <button
             onClick={(e) => { e.stopPropagation(); onCancel() }}
