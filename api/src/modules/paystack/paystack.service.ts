@@ -66,9 +66,11 @@ export class PaystackService {
       } catch (err) {
         this.logger.error(`Failed to confirm payment for ${reference}: ${err.message}`);
       }
-    } else if (['abandoned', 'failed', 'reversed'].includes(data.data.status)) {
-      // The customer cancelled/closed checkout, or the charge failed outright — release
-      // the seat(s) now instead of making them wait out the hold window to retry.
+    } else if (['failed', 'reversed'].includes(data.data.status)) {
+      // The charge failed outright — release the seat(s) now instead of making the
+      // customer wait out the hold window to retry. 'abandoned' is deliberately not here:
+      // Paystack reports a transfer/USSD payment that's still settling as 'abandoned', and
+      // releasing on it let paid seats be resold. Those holds expire on their own instead.
       try {
         await this.bookingsService.cancelPendingByReference(reference);
       } catch (err) {

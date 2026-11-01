@@ -20,7 +20,9 @@ export function PaymentCallbackPage() {
         if (data.ticketCode) {
           navigate(`/booking/confirmation/${data.ticketCode}`, { replace: true })
         } else {
-          toast.error('Payment was not completed — your seat has been released. You can try again.')
+          toast.error(
+            "We haven't received your payment yet. If you've paid, your ticket will be emailed as soon as it's confirmed.",
+          )
           navigate('/')
         }
       })

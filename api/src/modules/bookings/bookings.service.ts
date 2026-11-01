@@ -568,7 +568,12 @@ export class BookingsService {
     const bookings = await this.prisma.booking.findMany({
       where: { paystackReference: reference },
       include: {
-        trip: { include: { route: { include: { originStop: true, destinationStop: true } }, car: true } },
+        trip: {
+          include: {
+            route: { include: { originStop: true, destinationStop: true, routeStops: true } },
+            car: true,
+          },
+        },
         pickupStop: { include: { stop: true } },
         dropoffStop: { include: { stop: true } },
         user: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -585,8 +590,36 @@ export class BookingsService {
       data: { paymentStatus: 'PAID' },
     });
 
-    // A paid change supersedes the booking it was made from, releasing its seat.
-    const changedFromIds = bookings.map((b) => b.changedFromBookingId).filter((id): id is string => !!id);
+    // The money can land after the seats were released: the hold expired, or an early
+    // verify saw the payment as not-yet-complete. Paid means the customer keeps the seat,
+    // so reinstate it — unless someone else has bought it since, which needs an admin.
+    const unseated: typeof bookings = [];
+    for (const booking of bookings.filter((b) => b.status === 'CANCELLED')) {
+      try {
+        await this.assertSeatsAvailable(
+          booking.tripId,
+          booking.trip.route.routeStops,
+          booking.pickupStop,
+          booking.dropoffStop,
+          [booking.seatNumber],
+        );
+        await this.prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED' } });
+        booking.status = 'CONFIRMED';
+        this.logger.warn(`Reinstated cancelled booking ${booking.ticketCode} — payment ${reference} arrived after its seat was released`);
+      } catch (err) {
+        if (!(err instanceof ConflictException)) throw err;
+        unseated.push(booking);
+        this.logger.error(
+          `PAID BUT NO SEAT: booking ${booking.ticketCode} (seat ${booking.seatNumber}, trip ${booking.tripId}) was paid via ${reference} ` +
+            `after its seat was resold — needs manual reseating or a refund`,
+        );
+      }
+    }
+    const seated = bookings.filter((b) => b.status !== 'CANCELLED');
+
+    // A paid change supersedes the booking it was made from, releasing its seat — but
+    // only if the replacement actually holds a seat, or the customer would lose both.
+    const changedFromIds = seated.map((b) => b.changedFromBookingId).filter((id): id is string => !!id);
     if (changedFromIds.length > 0) {
       const superseded = await this.prisma.booking.updateMany({
         where: { id: { in: changedFromIds }, status: 'CONFIRMED' },
@@ -598,7 +631,7 @@ export class BookingsService {
     }
 
     if (!alreadyPaid) {
-      for (const booking of bookings) {
+      for (const booking of seated) {
         this.sendTicketConfirmationEmail(booking).catch((err) => {
           this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
         });
