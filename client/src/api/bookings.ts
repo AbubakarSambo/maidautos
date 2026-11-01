@@ -45,6 +45,12 @@ export const bookingsApi = {
   cancel: (id: string) =>
     apiClient.patch(`/bookings/${id}/cancel`).then((r) => r.data.data),
 
+  // Admin: cancel this booking and issue a new cash-paid ticket for the same seat to someone else.
+  reassign: (
+    id: string,
+    data: { guestName: string; guestEmail?: string; guestPhone?: string; nokName?: string; nokPhone?: string; amount?: number },
+  ) => apiClient.patch(`/bookings/${id}/reassign`, data).then((r) => r.data.data),
+
   recordCashPayment: (id: string) =>
     apiClient.patch(`/bookings/${id}/record-payment`).then((r) => r.data.data),
 

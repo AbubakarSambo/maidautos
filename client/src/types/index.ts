@@ -149,6 +149,10 @@ export interface Booking {
   changeFareDifference: number | null
   // Only on ticket-code lookups: the paid replacement ticket for a CHANGED booking.
   changedTo?: { ticketCode: string }[]
+  reassignedFromBookingId?: string | null
+  // Only on the admin bookings list: the ticket this seat was reassigned from / to.
+  reassignedFrom?: { ticketCode: string } | null
+  reassignedTo?: { ticketCode: string }[]
   createdAt: string
   trip: Trip
   user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'phone'> | null

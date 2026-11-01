@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
+import { ReassignBookingDto } from './dto/reassign-booking.dto';
 import { Public, OptionalAuth, Roles, CurrentUser } from '../../common';
 
 @ApiTags('Bookings')
@@ -80,6 +81,13 @@ export class BookingsController {
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @CurrentUser() user: any) {
     return this.bookingsService.cancel(id, user);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Patch(':id/reassign')
+  reassign(@Param('id') id: string, @Body() dto: ReassignBookingDto, @CurrentUser() user: any) {
+    return this.bookingsService.reassign(id, dto, user.id);
   }
 
   @ApiBearerAuth()

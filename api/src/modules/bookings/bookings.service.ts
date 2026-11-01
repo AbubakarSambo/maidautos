@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
+import { ReassignBookingDto } from './dto/reassign-booking.dto';
 import { resolveSegmentFare } from '../routes/segment-fare.util';
 import * as crypto from 'crypto';
 
@@ -52,6 +53,8 @@ export class BookingsService {
         dropoffStop: { include: { stop: true } },
         user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
         bookedByAdmin: { select: { id: true, firstName: true, lastName: true } },
+        reassignedFrom: { select: { ticketCode: true } },
+        reassignedTo: { select: { ticketCode: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -543,6 +546,79 @@ export class BookingsService {
     }
 
     return updated;
+  }
+
+  // Admin hands a booked seat to someone else — typically the original customer cancelled
+  // by phone and a walk-in paid cash. The original is cancelled and a new ticket (new code,
+  // so the old one can't be used to board) is issued for the same seat, stops and trip,
+  // recorded as cash PAID. Done in one transaction so the seat is never up for grabs.
+  // Refunding the original customer, if owed, happens outside the system.
+  async reassign(id: string, dto: ReassignBookingDto, adminId: string) {
+    const original = await this.findOne(id);
+
+    if (original.status !== 'CONFIRMED') {
+      throw new BadRequestException(`Only confirmed bookings can be reassigned — this one is ${original.status}`);
+    }
+    if (!['SCHEDULED', 'BOARDING'].includes(original.trip.status)) {
+      throw new BadRequestException('This trip has already departed or ended');
+    }
+    const guestEmail = dto.guestEmail?.trim() || undefined;
+    const guestPhone = dto.guestPhone?.trim() || undefined;
+    if (!guestEmail && !guestPhone) {
+      throw new BadRequestException('Provide a phone number or email for the new passenger');
+    }
+
+    const replacement = await this.prisma.$transaction(async (tx) => {
+      // Guarded on status so two admins (or a customer cancelling) can't race this.
+      const cancelled = await tx.booking.updateMany({
+        where: { id: original.id, status: 'CONFIRMED' },
+        data: { status: 'CANCELLED' },
+      });
+      if (cancelled.count === 0) throw new ConflictException('This booking was changed by someone else — refresh and try again');
+
+      return tx.booking.create({
+        data: {
+          tripId: original.tripId,
+          seatNumber: original.seatNumber,
+          pickupStopId: original.pickupStopId,
+          dropoffStopId: original.dropoffStopId,
+          groupId: crypto.randomUUID(),
+          guestName: dto.guestName.trim(),
+          guestEmail,
+          guestPhone,
+          nokName: dto.nokName?.trim() || undefined,
+          nokPhone: dto.nokPhone?.trim() || undefined,
+          amount: dto.amount ?? original.amount,
+          paymentMethod: 'CASH',
+          paymentStatus: 'PAID',
+          status: 'CONFIRMED',
+          ticketCode: this.generateTicketCode(),
+          bookedByAdminId: adminId,
+          reassignedFromBookingId: original.id,
+        },
+        include: {
+          trip: { include: { route: { include: { originStop: true, destinationStop: true } }, car: true } },
+          pickupStop: { include: { stop: true } },
+          dropoffStop: { include: { stop: true } },
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      });
+    });
+
+    this.logger.log(`Booking ${original.ticketCode} reassigned to ${replacement.ticketCode} by admin ${adminId}`);
+
+    const originalEmail = original.user?.email || original.guestEmail;
+    if (originalEmail) {
+      const firstName = original.user?.firstName || original.guestName || 'Passenger';
+      this.emailService.sendBookingCancellationEmail(originalEmail, firstName, original.ticketCode).catch((err) => {
+        this.logger.error(`Failed to send cancellation email for booking ${original.id} (${original.ticketCode}): ${err.message}`);
+      });
+    }
+    this.sendTicketConfirmationEmail(replacement).catch((err) => {
+      this.logger.error(`Failed to send ticket email for booking ${replacement.id} (${replacement.ticketCode}): ${err.message}`);
+    });
+
+    return replacement;
   }
 
   async recordCashPayment(id: string, adminId: string) {

@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw, UserRoundPen } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Booking } from '@/types'
+import { ReassignBookingDialog } from '@/components/admin/ReassignBookingDialog'
+import type { Booking, BookingStatus } from '@/types'
+
+// Bookings that no longer hold a seat (or never travelled) get a badge so they can't be
+// mistaken for live tickets in the list.
+const STATUS_BADGES: Partial<Record<BookingStatus, { label: string; className: string }>> = {
+  CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-700' },
+  CHANGED: { label: 'Changed', className: 'bg-gray-100 text-gray-600' },
+  NO_SHOW: { label: 'No-show', className: 'bg-gray-100 text-gray-600' },
+}
 
 export function AdminBookingsPage() {
   const navigate = useNavigate()
@@ -13,6 +22,7 @@ export function AdminBookingsPage() {
   const [search, setSearch] = useState('')
   const [unpaidCashOnly, setUnpaidCashOnly] = useState(false)
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PAYSTACK' | 'CASH'>('ALL')
+  const [reassigning, setReassigning] = useState<Booking | null>(null)
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['admin-bookings'],
@@ -108,14 +118,29 @@ export function AdminBookingsPage() {
             const passengerName = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Guest'
             const passengerEmail = b.user?.email || b.guestEmail
             const passengerPhone = b.user?.phone || b.guestPhone
+            const statusBadge = STATUS_BADGES[b.status]
+            const canReassign = b.status === 'CONFIRMED' && ['SCHEDULED', 'BOARDING'].includes(b.trip.status)
             return (
-              <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div key={b.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 ${statusBadge ? 'opacity-70' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-bold text-gray-900">{passengerName}</span>
                       <span className="text-xs text-gray-400 font-mono">{b.ticketCode}</span>
+                      {statusBadge && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusBadge.className}`}>{statusBadge.label}</span>
+                      )}
                     </div>
+                    {b.reassignedTo && b.reassignedTo.length > 0 && (
+                      <p className="text-xs text-gray-500 mb-1">
+                        Seat reassigned to <span className="font-mono">{b.reassignedTo.map((r) => r.ticketCode).join(', ')}</span>
+                      </p>
+                    )}
+                    {b.reassignedFrom && (
+                      <p className="text-xs text-gray-500 mb-1">
+                        Reassigned from <span className="font-mono">{b.reassignedFrom.ticketCode}</span>
+                      </p>
+                    )}
                     {(passengerEmail || passengerPhone) && (
                       <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                         {passengerEmail && <span>{passengerEmail}</span>}
@@ -160,6 +185,14 @@ export function AdminBookingsPage() {
                         <RefreshCw className="w-3.5 h-3.5" /> Re-verify
                       </button>
                     )}
+                    {canReassign && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setReassigning(b) }}
+                        className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                      >
+                        <UserRoundPen className="w-3.5 h-3.5" /> Reassign
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); window.open(`/booking/confirmation/${b.ticketCode}?print=1`, '_blank') }}
                       className="flex items-center gap-1 text-xs text-gray-500 font-semibold hover:underline"
@@ -174,6 +207,8 @@ export function AdminBookingsPage() {
           {filtered.length === 0 && <div className="py-12 text-center text-gray-500">No bookings found</div>}
         </div>
       )}
+
+      {reassigning && <ReassignBookingDialog booking={reassigning} onClose={() => setReassigning(null)} />}
     </div>
   )
 }
