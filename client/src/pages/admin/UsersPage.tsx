@@ -16,8 +16,14 @@ export function AdminUsersPage() {
   const { register, handleSubmit, reset } = useForm()
   const { mutate: create, isPending } = useMutation({
     mutationFn: (data: any) => apiClient.post('/users', data).then((r) => r.data.data),
-    onSuccess: () => { toast.success('Admin created'); reset(); setShowForm(false); qc.invalidateQueries({ queryKey: ['admin-users'] }) },
+    onSuccess: () => { toast.success('Invite sent'); reset(); setShowForm(false); qc.invalidateQueries({ queryKey: ['admin-users'] }) },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed'),
+  })
+
+  const { mutate: resendInvite, isPending: isResending, variables: resendingId } = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/users/${id}/resend-invite`).then((r) => r.data.data),
+    onSuccess: () => toast.success('Invite resent'),
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to resend invite'),
   })
 
   const { mutate: toggle } = useMutation({
@@ -43,10 +49,10 @@ export function AdminUsersPage() {
             <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Email</label><input {...register('email', { required: true })} type="email" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
             <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Phone</label><input {...register('phone')} className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
             <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">City</label><input {...register('adminCity')} placeholder="Abuja" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
-            <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Password</label><input {...register('password', { required: true, minLength: 8 })} type="password" className="mt-1.5 w-full px-3 py-2.5 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></div>
           </div>
+          <p className="text-xs text-gray-500">They'll get an email with a link to set their own password. The link is valid for 72 hours.</p>
           <div className="flex gap-2">
-            <button type="submit" disabled={isPending} className="bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg disabled:opacity-50 transition-colors">Create Admin</button>
+            <button type="submit" disabled={isPending} className="bg-primary hover:brightness-110 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg disabled:opacity-50 transition-colors">Send Invite</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">Cancel</button>
           </div>
         </form>
@@ -63,6 +69,12 @@ export function AdminUsersPage() {
               <p className="text-sm text-gray-500">{user.email} · {user.adminCity || 'No city'}</p>
             </div>
             <div className="flex items-center gap-2">
+              {user.invitePending && (
+                <>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">Invite pending</span>
+                  <button onClick={() => resendInvite(user.id)} disabled={isResending && resendingId === user.id} className="text-xs text-primary hover:brightness-110 underline disabled:opacity-50">Resend invite</button>
+                </>
+              )}
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${user.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>{user.role}</span>
               <button onClick={() => toggle(user.id)} className="text-xs text-gray-500 hover:text-gray-700 underline">{user.isActive ? 'Deactivate' : 'Activate'}</button>
             </div>

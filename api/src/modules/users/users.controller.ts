@@ -29,6 +29,12 @@ export class UsersController {
   }
 
   @Roles('SUPER_ADMIN')
+  @Post(':id/resend-invite')
+  resendInvite(@Param('id') id: string) {
+    return this.usersService.resendInvite(id);
+  }
+
+  @Roles('SUPER_ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: any) {
     return this.usersService.update(id, data);

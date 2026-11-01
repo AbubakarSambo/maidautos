@@ -60,6 +60,23 @@ export class EmailService {
     });
   }
 
+  async sendAdminInviteEmail(email: string, firstName: string, token: string) {
+    const inviteUrl = `${this.frontendUrl}/reset-password?token=${token}&invite=1`;
+    await this.send({
+      from: this.fromEmail,
+      to: email,
+      subject: "You've been invited to MaidAutos admin",
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+          <h2>Welcome to the MaidAutos team, ${firstName}!</h2>
+          <p>You've been given admin access to MaidAutos. Set a password to sign in.</p>
+          <a href="${inviteUrl}" style="display:inline-block;background:#610000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">Set your password</a>
+          <p style="color:#6b7280;font-size:14px">This link expires in 72 hours. If it expires, ask an admin to resend your invite.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendTicketEmail(
     email: string,
     firstName: string,
