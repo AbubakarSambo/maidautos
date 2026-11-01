@@ -20,10 +20,12 @@ export class CreateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ minLength: 8 })
+  // Leave blank to send an invite email so the person sets their own password.
+  @ApiPropertyOptional({ minLength: 8 })
+  @IsOptional()
   @IsString()
   @MinLength(8)
-  password: string;
+  password?: string;
 
   @ApiPropertyOptional({ enum: UserRole })
   @IsOptional()
