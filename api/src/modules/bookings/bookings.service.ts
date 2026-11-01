@@ -259,8 +259,9 @@ export class BookingsService {
     pickupStop: { order: number },
     dropoffStop: { order: number },
     seatNumbers: number[],
+    excludeBookingId?: string,
   ) {
-    const taken = await this.takenSeats(tripId, routeStops, pickupStop, dropoffStop);
+    const taken = await this.takenSeats(tripId, routeStops, pickupStop, dropoffStop, excludeBookingId);
     for (const seatNumber of seatNumbers) {
       if (taken.has(seatNumber)) {
         throw new ConflictException(`Seat ${seatNumber} is already booked for this segment`);
@@ -275,12 +276,14 @@ export class BookingsService {
     routeStops: { id: string; order: number }[],
     pickupStop: { order: number },
     dropoffStop: { order: number },
+    excludeBookingId?: string,
   ): Promise<Set<number>> {
     const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
     const routeStopOrderMap = new Map(routeStops.map((rs) => [rs.id, rs.order]));
     const liveBookings = await this.prisma.booking.findMany({
       where: {
         tripId,
+        ...(excludeBookingId && { id: { not: excludeBookingId } }),
         status: { in: ['CONFIRMED', 'COMPLETED'] },
         OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
       },
@@ -399,12 +402,19 @@ export class BookingsService {
   // Checks a booking can move to tripId/seatNumber — a different, future, scheduled trip
   // serving the same pickup and dropoff stops, with that seat free — and prices the seat.
   // Shared by customer changes and admin moves.
+  // By default the booking keeps its pickup/dropoff stops. Admin moves may pass new stops
+  // (a route change); then the same trip is allowed too, e.g. to change only the dropoff.
   private async validateChangeTarget(
-    booking: { tripId: string; pickupStop: { stopId: string }; dropoffStop: { stopId: string } },
+    booking: { id: string; tripId: string; pickupStop: { stopId: string }; dropoffStop: { stopId: string } },
     tripId: string,
     seatNumber: number,
+    newStops?: { pickupStopId: string; dropoffStopId: string },
   ) {
-    if (tripId === booking.tripId) {
+    const targetPickupStopId = newStops?.pickupStopId ?? booking.pickupStop.stopId;
+    const targetDropoffStopId = newStops?.dropoffStopId ?? booking.dropoffStop.stopId;
+    const stopsChanged =
+      targetPickupStopId !== booking.pickupStop.stopId || targetDropoffStopId !== booking.dropoffStop.stopId;
+    if (tripId === booking.tripId && !stopsChanged) {
       throw new BadRequestException('Choose a different trip — seat changes on the same trip are not supported');
     }
     const dto = { tripId, seatNumber };
@@ -422,15 +432,23 @@ export class BookingsService {
     }
     if (dto.seatNumber > newTrip.car.capacity) throw new BadRequestException('Invalid seat number');
 
-    // Same physical pickup and dropoff stops; the new trip may be on a different route.
-    const pickupStop = newTrip.route.routeStops.find((rs) => rs.stopId === booking.pickupStop.stopId);
-    const dropoffStop = newTrip.route.routeStops.find((rs) => rs.stopId === booking.dropoffStop.stopId);
+    // The new trip may be on a different route, so look up its own route-stop rows.
+    const pickupStop = newTrip.route.routeStops.find((rs) => rs.stopId === targetPickupStopId);
+    const dropoffStop = newTrip.route.routeStops.find((rs) => rs.stopId === targetDropoffStopId);
     if (!pickupStop || !dropoffStop || pickupStop.order >= dropoffStop.order) {
-      throw new BadRequestException('That trip does not serve the same pickup and dropoff stops');
+      throw new BadRequestException(
+        stopsChanged
+          ? 'That trip does not go from the chosen pickup to the chosen dropoff'
+          : 'That trip does not serve the same pickup and dropoff stops',
+      );
     }
 
     await this.expireStaleHolds(newTrip.id);
-    await this.assertSeatsAvailable(newTrip.id, newTrip.route.routeStops, pickupStop, dropoffStop, [dto.seatNumber]);
+    // On the same trip the booking's own current seat mustn't count against it.
+    await this.assertSeatsAvailable(
+      newTrip.id, newTrip.route.routeStops, pickupStop, dropoffStop, [dto.seatNumber],
+      newTrip.id === booking.tripId ? booking.id : undefined,
+    );
 
     const baseFare = resolveSegmentFare(newTrip.route, pickupStop, dropoffStop, newTrip.priceOverride);
     if (baseFare <= 0) throw new BadRequestException('Invalid price calculation for this segment');
@@ -648,8 +666,9 @@ export class BookingsService {
     return replacement;
   }
 
-  // Admin: move a paid booking to another trip on the same pickup/dropoff stops, with no
-  // change cutoff and no fee — the new ticket keeps what the customer already paid. The
+  // Admin: move a paid booking to another trip, optionally with new pickup/dropoff stops
+  // (a route change), with no change cutoff and no fee — the new ticket keeps what the
+  // customer already paid, whatever the new segment's fare. The
   // original is marked CHANGED (freeing its seat, excluded from revenue) and a new ticket
   // is issued, linked back via changedFromBookingId, in one transaction.
   async adminMove(id: string, dto: MoveBookingDto, adminId: string) {
@@ -668,7 +687,13 @@ export class BookingsService {
     }
     if (original.paymentStatus !== 'PAID') throw new BadRequestException('This booking has not been paid for yet');
 
-    const { newTrip, pickupStop, dropoffStop } = await this.validateChangeTarget(original, dto.tripId, dto.seatNumber);
+    if (!!dto.pickupStopId !== !!dto.dropoffStopId) {
+      throw new BadRequestException('Provide both a new pickup and a new dropoff stop, or neither');
+    }
+    const newStops = dto.pickupStopId && dto.dropoffStopId
+      ? { pickupStopId: dto.pickupStopId, dropoffStopId: dto.dropoffStopId }
+      : undefined;
+    const { newTrip, pickupStop, dropoffStop } = await this.validateChangeTarget(original, dto.tripId, dto.seatNumber, newStops);
 
     const replacement = await this.prisma.$transaction(async (tx) => {
       // Guarded on status so a concurrent cancel, reassign or customer change can't race this.
