@@ -259,27 +259,39 @@ export class BookingsService {
     dropoffStop: { order: number },
     seatNumbers: number[],
   ) {
-    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
-    const routeStopOrderMap = new Map(routeStops.map((rs) => [rs.id, rs.order]));
-    const seatBookings = await this.prisma.booking.findMany({
-      where: {
-        tripId,
-        seatNumber: { in: seatNumbers },
-        status: { in: ['CONFIRMED', 'COMPLETED'] },
-        OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
-      },
-    });
+    const taken = await this.takenSeats(tripId, routeStops, pickupStop, dropoffStop);
     for (const seatNumber of seatNumbers) {
-      const conflictingBooking = seatBookings.find((b) => {
-        if (b.seatNumber !== seatNumber) return false;
-        const bPickupOrder = routeStopOrderMap.get(b.pickupStopId) ?? -1;
-        const bDropoffOrder = routeStopOrderMap.get(b.dropoffStopId) ?? -1;
-        return bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order;
-      });
-      if (conflictingBooking) {
+      if (taken.has(seatNumber)) {
         throw new ConflictException(`Seat ${seatNumber} is already booked for this segment`);
       }
     }
+  }
+
+  // Seats on this trip held by a live booking whose segment overlaps pickup->dropoff.
+  // Unpaid bookings only count while their hold is fresh.
+  private async takenSeats(
+    tripId: string,
+    routeStops: { id: string; order: number }[],
+    pickupStop: { order: number },
+    dropoffStop: { order: number },
+  ): Promise<Set<number>> {
+    const holdCutoff = new Date(Date.now() - PENDING_PAYMENT_HOLD_MINUTES * 60 * 1000);
+    const routeStopOrderMap = new Map(routeStops.map((rs) => [rs.id, rs.order]));
+    const liveBookings = await this.prisma.booking.findMany({
+      where: {
+        tripId,
+        status: { in: ['CONFIRMED', 'COMPLETED'] },
+        OR: [{ paymentStatus: { not: 'PENDING' } }, { createdAt: { gte: holdCutoff } }],
+      },
+      select: { seatNumber: true, pickupStopId: true, dropoffStopId: true },
+    });
+    const taken = new Set<number>();
+    for (const b of liveBookings) {
+      const bPickupOrder = routeStopOrderMap.get(b.pickupStopId) ?? -1;
+      const bDropoffOrder = routeStopOrderMap.get(b.dropoffStopId) ?? -1;
+      if (bPickupOrder < dropoffStop.order && bDropoffOrder > pickupStop.order) taken.add(b.seatNumber);
+    }
+    return taken;
   }
 
   // ---------------------------------------------------------------------------
@@ -652,44 +664,61 @@ export class BookingsService {
         },
         pickupStop: { include: { stop: true } },
         dropoffStop: { include: { stop: true } },
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+        reassignedTo: { select: { id: true } },
       },
     });
     if (bookings.length === 0) throw new NotFoundException('Booking not found for this payment reference');
 
-    // Both the Paystack webhook and the browser-return verify call land here for
-    // the same reference — only send the ticket email the first time it's marked PAID.
-    const alreadyPaid = bookings[0].paymentStatus === 'PAID';
-
-    await this.prisma.booking.updateMany({
-      where: { paystackReference: reference },
-      data: { paymentStatus: 'PAID' },
-    });
+    // Both the Paystack webhook and the browser-return verify call land here for the same
+    // reference — sometimes at the same moment, and Paystack retries webhooks. Each booking
+    // is claimed atomically (PENDING -> PAID) and only the call that claims it does the
+    // follow-up (reseating, admin alert, ticket email), so none of that ever runs twice.
+    // A retried webhook can't flip a REFUNDED booking back to PAID either.
+    const newlyPaid: typeof bookings = [];
+    for (const booking of bookings) {
+      const claimed = await this.prisma.booking.updateMany({
+        where: { id: booking.id, paymentStatus: 'PENDING' },
+        data: { paymentStatus: 'PAID' },
+      });
+      if (claimed.count === 1) {
+        booking.paymentStatus = 'PAID';
+        newlyPaid.push(booking);
+      }
+    }
 
     // The money can land after the seats were released: the hold expired, or an early
-    // verify saw the payment as not-yet-complete. Paid means the customer keeps the seat,
-    // so reinstate it — unless someone else has bought it since, which needs an admin.
-    const unseated: typeof bookings = [];
-    for (const booking of bookings.filter((b) => b.status === 'CANCELLED')) {
-      try {
-        await this.assertSeatsAvailable(
-          booking.tripId,
-          booking.trip.route.routeStops,
-          booking.pickupStop,
-          booking.dropoffStop,
-          [booking.seatNumber],
+    // verify saw the payment as not-yet-complete. Paid means the customer keeps a seat:
+    // their own if it's still free, otherwise any other free seat for their segment. If
+    // the car is full, flag it for an admin.
+    const unseated: ((typeof bookings)[number] & { reason: string })[] = [];
+    for (const booking of newlyPaid.filter((b) => b.status === 'CANCELLED')) {
+      const result = await this.findSeatForLatePayment(booking);
+      if ('seatNumber' in result) {
+        const { seatNumber } = result;
+        await this.prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED', seatNumber } });
+        const moved = seatNumber !== booking.seatNumber;
+        this.logger.warn(
+          `Reinstated cancelled booking ${booking.ticketCode} — payment ${reference} arrived after its seat was released` +
+            (moved ? `; seat ${booking.seatNumber} was taken, moved to seat ${seatNumber}` : ''),
         );
-        await this.prisma.booking.update({ where: { id: booking.id }, data: { status: 'CONFIRMED' } });
         booking.status = 'CONFIRMED';
-        this.logger.warn(`Reinstated cancelled booking ${booking.ticketCode} — payment ${reference} arrived after its seat was released`);
-      } catch (err) {
-        if (!(err instanceof ConflictException)) throw err;
-        unseated.push(booking);
+        booking.seatNumber = seatNumber;
+      } else {
+        const paidWithoutSeatAt = new Date();
+        await this.prisma.booking.update({ where: { id: booking.id }, data: { paidWithoutSeatAt } });
+        booking.paidWithoutSeatAt = paidWithoutSeatAt;
+        unseated.push({ ...booking, reason: result.reason });
         this.logger.error(
           `PAID BUT NO SEAT: booking ${booking.ticketCode} (seat ${booking.seatNumber}, trip ${booking.tripId}) was paid via ${reference} ` +
-            `after its seat was resold — needs manual reseating or a refund`,
+            `but couldn't be reseated (${result.reason}) — needs manual rebooking or a refund`,
         );
       }
+    }
+    if (unseated.length > 0) {
+      this.alertAdminsPaidWithoutSeat(unseated, reference).catch((err) => {
+        this.logger.error(`Failed to send paid-without-seat alert for ${reference}: ${err.message}`);
+      });
     }
     const seated = bookings.filter((b) => b.status !== 'CANCELLED');
 
@@ -701,20 +730,93 @@ export class BookingsService {
         where: { id: { in: changedFromIds }, status: 'CONFIRMED' },
         data: { status: 'CHANGED' },
       });
-      if (!alreadyPaid && superseded.count < changedFromIds.length) {
+      if (newlyPaid.length > 0 && superseded.count < changedFromIds.length) {
         this.logger.warn(`Change payment ${reference} confirmed but original booking(s) ${changedFromIds.join(', ')} were no longer CONFIRMED`);
       }
     }
 
-    if (!alreadyPaid) {
-      for (const booking of seated) {
-        this.sendTicketConfirmationEmail(booking).catch((err) => {
-          this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
-        });
-      }
+    for (const booking of newlyPaid.filter((b) => b.status !== 'CANCELLED')) {
+      this.sendTicketConfirmationEmail(booking).catch((err) => {
+        this.logger.error(`Failed to send ticket email for booking ${booking.id} (${booking.ticketCode}): ${err.message}`);
+      });
     }
 
-    return bookings[0];
+    // Prefer a booking that holds a seat, so the customer lands on a valid ticket.
+    return seated[0] ?? bookings[0];
+  }
+
+  // A free seat for a booking whose payment landed after it was cancelled: its own seat
+  // if still free, else the lowest free standard seat, else the lowest free premium seat
+  // (the customer isn't charged the surcharge — the mix-up was ours). Null when the car
+  // is full for their segment, the trip has left, or an admin deliberately gave this
+  // seat to someone else (that customer cancelled — an admin decides what happens).
+  private async findSeatForLatePayment(booking: {
+    tripId: string;
+    seatNumber: number;
+    reassignedTo: { id: string }[];
+    trip: { status: string; car: { capacity: number; premiumSeatNumbers: number[] }; route: { routeStops: { id: string; order: number }[] } };
+    pickupStop: { order: number };
+    dropoffStop: { order: number };
+  }): Promise<{ seatNumber: number } | { reason: string }> {
+    if (booking.reassignedTo.length > 0) return { reason: 'an admin had already given their seat to another passenger' };
+    if (!['SCHEDULED', 'BOARDING'].includes(booking.trip.status)) return { reason: `the trip is already ${booking.trip.status.toLowerCase()}` };
+
+    const taken = await this.takenSeats(booking.tripId, booking.trip.route.routeStops, booking.pickupStop, booking.dropoffStop);
+    if (!taken.has(booking.seatNumber)) return { seatNumber: booking.seatNumber };
+
+    const free = Array.from({ length: booking.trip.car.capacity }, (_, i) => i + 1).filter((s) => !taken.has(s));
+    const premium = new Set(booking.trip.car.premiumSeatNumbers);
+    const seatNumber = free.find((s) => !premium.has(s)) ?? free[0];
+    return seatNumber != null ? { seatNumber } : { reason: 'every seat on the trip is taken for their journey' };
+  }
+
+  private async alertAdminsPaidWithoutSeat(
+    bookings: {
+      ticketCode: string;
+      seatNumber: number;
+      amount: any;
+      guestName: string | null;
+      guestEmail: string | null;
+      guestPhone: string | null;
+      user: { firstName: string; lastName: string; email: string | null; phone: string | null } | null;
+      trip: { departureDateTime: Date; route: { originStop: { name: string }; destinationStop: { name: string } } };
+      pickupStop: { stop: { name: string } };
+      dropoffStop: { stop: { name: string } };
+      reason: string;
+    }[],
+    reference: string,
+  ) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, isActive: true, email: { not: null } },
+      select: { email: true },
+    });
+    const to = admins.map((a) => a.email!).filter(Boolean);
+    if (to.length === 0) {
+      this.logger.error(`No admin emails to alert about paid-without-seat payment ${reference}`);
+      return;
+    }
+    for (const b of bookings) {
+      await this.emailService.sendPaidWithoutSeatAlert(to, {
+        ticketCode: b.ticketCode,
+        passengerName: b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Guest',
+        phone: b.user?.phone || b.guestPhone,
+        email: b.user?.email || b.guestEmail,
+        route: `${b.pickupStop.stop.name} → ${b.dropoffStop.stop.name}`,
+        departure: b.trip.departureDateTime.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }),
+        seatNumber: b.seatNumber,
+        amount: Number(b.amount).toLocaleString('en-NG'),
+        paystackReference: reference,
+        reason: b.reason,
+      });
+    }
+  }
+
+  // Admin has dealt with a paid-without-seat booking (rebooked the customer or refunded them).
+  async resolvePaidWithoutSeat(id: string, adminId: string) {
+    const booking = await this.findOne(id);
+    if (!booking.paidWithoutSeatAt) throw new BadRequestException('This booking is not flagged as paid without a seat');
+    this.logger.log(`Paid-without-seat booking ${booking.ticketCode} marked resolved by admin ${adminId}`);
+    return this.prisma.booking.update({ where: { id }, data: { paidWithoutSeatAt: null } });
   }
 
   private async sendTicketConfirmationEmail(booking: {

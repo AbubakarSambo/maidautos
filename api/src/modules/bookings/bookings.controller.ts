@@ -92,6 +92,13 @@ export class BookingsController {
 
   @ApiBearerAuth()
   @Roles('SUPER_ADMIN', 'ADMIN')
+  @Patch(':id/resolve-paid-without-seat')
+  resolvePaidWithoutSeat(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.bookingsService.resolvePaidWithoutSeat(id, user.id);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
   @Patch(':id/record-payment')
   recordCashPayment(@Param('id') id: string, @CurrentUser() user: any) {
     return this.bookingsService.recordCashPayment(id, user.id);

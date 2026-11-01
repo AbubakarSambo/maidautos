@@ -317,6 +317,10 @@ model Booking {
   // (e.g. the original customer cancelled by phone and someone else paid cash). The
   // original is CANCELLED in the same transaction; this points back to it for audit.
   reassignedFromBookingId String?       @map("reassigned_from_booking_id")
+  // Set when a Paystack payment landed after this booking's seat was released and no
+  // seat could be found for the customer: they've paid but hold no ticket. Shown to
+  // admins as "Paid, no seat" until one marks it resolved (rebooked or refunded).
+  paidWithoutSeatAt       DateTime?     @map("paid_without_seat_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw, UserRoundPen } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw, UserRoundPen, AlertTriangle } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -21,6 +21,7 @@ export function AdminBookingsPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [unpaidCashOnly, setUnpaidCashOnly] = useState(false)
+  const [paidNoSeatOnly, setPaidNoSeatOnly] = useState(false)
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PAYSTACK' | 'CASH'>('ALL')
   const [reassigning, setReassigning] = useState<Booking | null>(null)
 
@@ -34,6 +35,12 @@ export function AdminBookingsPage() {
     onSuccess: () => { toast.success('Payment recorded'); qc.invalidateQueries({ queryKey: ['admin-bookings'] }) },
   })
 
+  const { mutate: resolvePaidWithoutSeat, isPending: isResolving } = useMutation({
+    mutationFn: (id: string) => bookingsApi.resolvePaidWithoutSeat(id),
+    onSuccess: () => { toast.success('Marked as resolved'); qc.invalidateQueries({ queryKey: ['admin-bookings'] }) },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Could not mark as resolved'),
+  })
+
   const { mutate: reVerifyPayment, isPending: isReVerifying } = useMutation({
     mutationFn: (id: string) => bookingsApi.reVerifyPayment(id),
     onSuccess: (data: any) => {
@@ -45,9 +52,11 @@ export function AdminBookingsPage() {
   })
 
   const unpaidCashCount = bookings.filter((b) => b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING').length
+  const paidNoSeatCount = bookings.filter((b) => b.paidWithoutSeatAt).length
 
   const filtered = bookings.filter((b) => {
     if (unpaidCashOnly && !(b.paymentMethod === 'CASH' && b.paymentStatus === 'PENDING')) return false
+    if (paidNoSeatOnly && !b.paidWithoutSeatAt) return false
     if (methodFilter !== 'ALL' && b.paymentMethod !== methodFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
@@ -108,6 +117,21 @@ export function AdminBookingsPage() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setPaidNoSeatOnly((v) => !v)}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors whitespace-nowrap ${
+            paidNoSeatOnly
+              ? 'border-red-500 bg-red-50 text-red-700'
+              : paidNoSeatCount > 0
+                ? 'border-red-300 text-red-700 hover:bg-red-50'
+                : 'border-outline-variant text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          Paid, no seat
+          {paidNoSeatCount > 0 && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full font-bold bg-red-500 text-white">{paidNoSeatCount}</span>
+          )}
+        </button>
       </div>
 
       {isLoading ? (
@@ -121,7 +145,12 @@ export function AdminBookingsPage() {
             const statusBadge = STATUS_BADGES[b.status]
             const canReassign = b.status === 'CONFIRMED' && ['SCHEDULED', 'BOARDING'].includes(b.trip.status)
             return (
-              <div key={b.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-4 ${statusBadge ? 'opacity-70' : ''}`}>
+              <div
+                key={b.id}
+                className={`bg-white rounded-2xl border shadow-sm p-4 ${
+                  b.paidWithoutSeatAt ? 'border-red-300' : statusBadge ? 'border-gray-100 opacity-70' : 'border-gray-100'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -131,6 +160,12 @@ export function AdminBookingsPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusBadge.className}`}>{statusBadge.label}</span>
                       )}
                     </div>
+                    {b.paidWithoutSeatAt && (
+                      <p className="flex items-start gap-1.5 text-xs text-red-700 font-semibold mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                        Paid, but no seat was free when the payment arrived. Call them to rebook on another trip or refund via Paystack.
+                      </p>
+                    )}
                     {b.reassignedTo && b.reassignedTo.length > 0 && (
                       <p className="text-xs text-gray-500 mb-1">
                         Seat reassigned to <span className="font-mono">{b.reassignedTo.map((r) => r.ticketCode).join(', ')}</span>
@@ -183,6 +218,20 @@ export function AdminBookingsPage() {
                         className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline disabled:opacity-50"
                       >
                         <RefreshCw className="w-3.5 h-3.5" /> Re-verify
+                      </button>
+                    )}
+                    {b.paidWithoutSeatAt && (
+                      <button
+                        disabled={isResolving}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (window.confirm(`Mark ${b.ticketCode} as resolved? Only do this once the customer has been rebooked or refunded.`)) {
+                            resolvePaidWithoutSeat(b.id)
+                          }
+                        }}
+                        className="flex items-center gap-1 text-xs text-red-700 font-semibold hover:underline disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" /> Mark resolved
                       </button>
                     )}
                     {canReassign && (

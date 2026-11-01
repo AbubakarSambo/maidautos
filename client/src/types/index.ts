@@ -153,6 +153,8 @@ export interface Booking {
   // Only on the admin bookings list: the ticket this seat was reassigned from / to.
   reassignedFrom?: { ticketCode: string } | null
   reassignedTo?: { ticketCode: string }[]
+  // Set when the customer's payment landed but no seat was left for them — needs an admin.
+  paidWithoutSeatAt?: string | null
   createdAt: string
   trip: Trip
   user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'phone'> | null

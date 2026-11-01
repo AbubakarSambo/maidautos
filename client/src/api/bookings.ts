@@ -51,6 +51,10 @@ export const bookingsApi = {
     data: { guestName: string; guestEmail?: string; guestPhone?: string; nokName?: string; nokPhone?: string; amount?: number },
   ) => apiClient.patch(`/bookings/${id}/reassign`, data).then((r) => r.data.data),
 
+  // Admin: clear the paid-without-seat flag once the customer has been rebooked or refunded.
+  resolvePaidWithoutSeat: (id: string) =>
+    apiClient.patch(`/bookings/${id}/resolve-paid-without-seat`).then((r) => r.data.data),
+
   recordCashPayment: (id: string) =>
     apiClient.patch(`/bookings/${id}/record-payment`).then((r) => r.data.data),
 

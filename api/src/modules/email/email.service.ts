@@ -16,9 +16,19 @@ export class EmailService {
     this.frontendUrl = this.configService.get<string>('resend.frontendUrl');
   }
 
+  // Resend reports failures (bad API key, unverified domain, rejected recipient) in the
+  // resolved value rather than by throwing, so without this check every failed email
+  // would vanish without a trace.
+  private async send(payload: Parameters<Resend['emails']['send']>[0]) {
+    const { error } = await this.resend.emails.send(payload);
+    if (error) {
+      this.logger.error(`Email "${payload.subject}" to ${[payload.to].flat().join(', ')} failed: ${error.name} — ${error.message}`);
+    }
+  }
+
   async sendVerificationEmail(email: string, firstName: string, token: string) {
     const verifyUrl = `${this.frontendUrl}/verify-email?token=${token}`;
-    await this.resend.emails.send({
+    await this.send({
       from: this.fromEmail,
       to: email,
       subject: 'Verify your MaidAutos account',
@@ -35,7 +45,7 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, firstName: string, token: string) {
     const resetUrl = `${this.frontendUrl}/reset-password?token=${token}`;
-    await this.resend.emails.send({
+    await this.send({
       from: this.fromEmail,
       to: email,
       subject: 'Reset your MaidAutos password',
@@ -74,7 +84,7 @@ export class EmailService {
       </tr>
     `;
 
-    await this.resend.emails.send({
+    await this.send({
       from: this.fromEmail,
       to: email,
       subject: `Your MaidAutos Ticket — ${ticketCode}`,
@@ -134,7 +144,7 @@ export class EmailService {
   // HTML email — escape them so a submitted name/message can't inject markup/links.
   async sendContactEmail(name: string, email: string, subject: string | undefined, message: string) {
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    await this.resend.emails.send({
+    await this.send({
       from: this.fromEmail,
       to: 'samboabubakar5@gmail.com',
       replyTo: email,
@@ -152,8 +162,54 @@ export class EmailService {
     });
   }
 
+  // Internal alert: a customer paid but no seat could be found for them (their seat was
+  // resold while the payment was settling and the car is full for their segment).
+  async sendPaidWithoutSeatAlert(
+    to: string[],
+    details: {
+      ticketCode: string;
+      passengerName: string;
+      phone: string | null;
+      email: string | null;
+      route: string;
+      departure: string;
+      seatNumber: number;
+      amount: string;
+      paystackReference: string;
+      reason: string;
+    },
+  ) {
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const row = (label: string, value: string | null) =>
+      `<tr><td style="padding:4px 12px 4px 0;color:#6b7280">${label}</td><td style="padding:4px 0"><strong>${value ? esc(value) : '—'}</strong></td></tr>`;
+    await this.send({
+      from: this.fromEmail,
+      to,
+      subject: `Action needed: ${details.ticketCode} paid but has no seat`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+          <h2 style="color:#b91c1c">Customer paid but has no seat</h2>
+          <p>A Paystack payment arrived after this booking's seat had been released, and they couldn't be given a seat because ${esc(details.reason)}. The customer has <strong>not</strong> been sent a ticket.</p>
+          <p>Please call them to move them to another trip or refund them through Paystack, then mark it resolved in the admin Bookings page.</p>
+          <table style="border-collapse:collapse;margin:16px 0;font-size:14px">
+            ${row('Passenger', details.passengerName)}
+            ${row('Phone', details.phone)}
+            ${row('Email', details.email)}
+            ${row('Ticket', details.ticketCode)}
+            ${row('Trip', details.route)}
+            ${row('Departure', details.departure)}
+            ${row('Original seat', String(details.seatNumber))}
+            ${row('Amount paid', `₦${details.amount}`)}
+            ${row('Paystack ref', details.paystackReference)}
+          </table>
+          <a href="${this.frontendUrl}/admin/bookings" style="display:inline-block;background:#610000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none">Open admin bookings</a>
+        </div>
+      `,
+    });
+  }
+
   async sendBookingCancellationEmail(email: string, firstName: string, ticketCode: string) {
-    await this.resend.emails.send({
+    await this.send({
       from: this.fromEmail,
       to: email,
       subject: `Booking Cancelled — ${ticketCode}`,
