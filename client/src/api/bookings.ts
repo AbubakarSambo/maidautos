@@ -51,6 +51,10 @@ export const bookingsApi = {
     data: { guestName: string; guestEmail?: string; guestPhone?: string; nokName?: string; nokPhone?: string; amount?: number },
   ) => apiClient.patch(`/bookings/${id}/reassign`, data).then((r) => r.data.data),
 
+  // Admin: move a paid booking to another trip on the same stops — no cutoff, no fee.
+  move: (id: string, data: { tripId: string; seatNumber: number }) =>
+    apiClient.patch(`/bookings/${id}/move`, data).then((r) => r.data.data),
+
   // Admin: clear the paid-without-seat flag once the customer has been rebooked or refunded.
   resolvePaidWithoutSeat: (id: string) =>
     apiClient.patch(`/bookings/${id}/resolve-paid-without-seat`).then((r) => r.data.data),

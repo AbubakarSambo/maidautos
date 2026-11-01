@@ -11,6 +11,7 @@ import { EmailService } from '../email/email.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
 import { ReassignBookingDto } from './dto/reassign-booking.dto';
+import { MoveBookingDto } from './dto/move-booking.dto';
 import { resolveSegmentFare } from '../routes/segment-fare.util';
 import * as crypto from 'crypto';
 
@@ -372,9 +373,41 @@ export class BookingsService {
     const booking = await this.loadManageableBooking(dto, requestingUser);
     const blockedReason = this.changeBlockedReason(booking);
     if (blockedReason) throw new BadRequestException(blockedReason);
-    if (dto.tripId === booking.tripId) {
+    const { newTrip, pickupStop, dropoffStop, newFare } = await this.validateChangeTarget(booking, dto.tripId, dto.seatNumber);
+
+    const currentValue = Number(booking.amount);
+    const changeFee = Math.round(currentValue * BOOKING_CHANGE_FEE_RATE);
+    const fareDifference = Math.max(0, Math.round((newFare - currentValue) * 100) / 100);
+
+    return {
+      booking,
+      newTrip,
+      pickupStop,
+      dropoffStop,
+      quote: {
+        currentValue,
+        newFare,
+        changeFee,
+        fareDifference,
+        totalDue: changeFee + fareDifference,
+        // The ticket keeps the higher of what was paid and the new fare — no refund down.
+        newTicketValue: currentValue + fareDifference,
+      },
+    };
+  }
+
+  // Checks a booking can move to tripId/seatNumber — a different, future, scheduled trip
+  // serving the same pickup and dropoff stops, with that seat free — and prices the seat.
+  // Shared by customer changes and admin moves.
+  private async validateChangeTarget(
+    booking: { tripId: string; pickupStop: { stopId: string }; dropoffStop: { stopId: string } },
+    tripId: string,
+    seatNumber: number,
+  ) {
+    if (tripId === booking.tripId) {
       throw new BadRequestException('Choose a different trip — seat changes on the same trip are not supported');
     }
+    const dto = { tripId, seatNumber };
 
     const newTrip = await this.prisma.trip.findUnique({
       where: { id: dto.tripId },
@@ -405,25 +438,7 @@ export class BookingsService {
       baseFare +
       (newTrip.car.premiumSeatNumbers.includes(dto.seatNumber) ? Number(newTrip.car.premiumSeatSurcharge) : 0);
 
-    const currentValue = Number(booking.amount);
-    const changeFee = Math.round(currentValue * BOOKING_CHANGE_FEE_RATE);
-    const fareDifference = Math.max(0, Math.round((newFare - currentValue) * 100) / 100);
-
-    return {
-      booking,
-      newTrip,
-      pickupStop,
-      dropoffStop,
-      quote: {
-        currentValue,
-        newFare,
-        changeFee,
-        fareDifference,
-        totalDue: changeFee + fareDifference,
-        // The ticket keeps the higher of what was paid and the new fare — no refund down.
-        newTicketValue: currentValue + fareDifference,
-      },
-    };
+    return { newTrip, pickupStop, dropoffStop, newFare };
   }
 
   async quoteChange(dto: ChangeBookingDto, requestingUser?: any) {
@@ -630,6 +645,75 @@ export class BookingsService {
       this.logger.error(`Failed to send ticket email for booking ${replacement.id} (${replacement.ticketCode}): ${err.message}`);
     });
 
+    return replacement;
+  }
+
+  // Admin: move a paid booking to another trip on the same pickup/dropoff stops, with no
+  // change cutoff and no fee — the new ticket keeps what the customer already paid. The
+  // original is marked CHANGED (freeing its seat, excluded from revenue) and a new ticket
+  // is issued, linked back via changedFromBookingId, in one transaction.
+  async adminMove(id: string, dto: MoveBookingDto, adminId: string) {
+    const original = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        pickupStop: { include: { stop: true } },
+        dropoffStop: { include: { stop: true } },
+        user: { select: { email: true, firstName: true } },
+      },
+    });
+    if (!original) throw new NotFoundException('Booking not found');
+    if (original.status === 'CHANGED') throw new BadRequestException('This ticket has already been changed to another trip');
+    if (original.status !== 'CONFIRMED') {
+      throw new BadRequestException(`Only confirmed bookings can be moved — this one is ${original.status}`);
+    }
+    if (original.paymentStatus !== 'PAID') throw new BadRequestException('This booking has not been paid for yet');
+
+    const { newTrip, pickupStop, dropoffStop } = await this.validateChangeTarget(original, dto.tripId, dto.seatNumber);
+
+    const replacement = await this.prisma.$transaction(async (tx) => {
+      // Guarded on status so a concurrent cancel, reassign or customer change can't race this.
+      const superseded = await tx.booking.updateMany({
+        where: { id: original.id, status: 'CONFIRMED' },
+        data: { status: 'CHANGED' },
+      });
+      if (superseded.count === 0) throw new ConflictException('This booking was changed by someone else — refresh and try again');
+
+      return tx.booking.create({
+        data: {
+          tripId: newTrip.id,
+          userId: original.userId,
+          guestName: original.guestName,
+          guestEmail: original.guestEmail,
+          guestPhone: original.guestPhone,
+          nokName: original.nokName,
+          nokPhone: original.nokPhone,
+          seatNumber: dto.seatNumber,
+          groupId: crypto.randomUUID(),
+          pickupStopId: pickupStop.id,
+          dropoffStopId: dropoffStop.id,
+          amount: original.amount,
+          paymentMethod: original.paymentMethod,
+          paymentStatus: 'PAID',
+          status: 'CONFIRMED',
+          ticketCode: this.generateTicketCode(),
+          bookedByAdminId: adminId,
+          changedFromBookingId: original.id,
+          changeFee: 0,
+          changeFareDifference: 0,
+        },
+        include: {
+          trip: { include: { route: { include: { originStop: true, destinationStop: true } }, car: true } },
+          pickupStop: { include: { stop: true } },
+          dropoffStop: { include: { stop: true } },
+          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        },
+      });
+    });
+
+    this.logger.log(`Booking ${original.ticketCode} moved to trip ${newTrip.id} as ${replacement.ticketCode} by admin ${adminId}`);
+    this.sendTicketConfirmationEmail(replacement).catch((err) => {
+      this.logger.error(`Failed to send ticket email for booking ${replacement.id} (${replacement.ticketCode}): ${err.message}`);
+    });
     return replacement;
   }
 

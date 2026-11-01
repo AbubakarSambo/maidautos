@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw, UserRoundPen, AlertTriangle } from 'lucide-react'
+import { Plus, Search, ArrowRight, CheckCircle, Printer, RefreshCw, UserRoundPen, AlertTriangle, CalendarClock } from 'lucide-react'
 import { bookingsApi } from '@/api'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ReassignBookingDialog } from '@/components/admin/ReassignBookingDialog'
+import { MoveBookingDialog } from '@/components/admin/MoveBookingDialog'
 import type { Booking, BookingStatus } from '@/types'
 
 // Bookings that no longer hold a seat (or never travelled) get a badge so they can't be
@@ -24,6 +25,7 @@ export function AdminBookingsPage() {
   const [paidNoSeatOnly, setPaidNoSeatOnly] = useState(false)
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PAYSTACK' | 'CASH'>('ALL')
   const [reassigning, setReassigning] = useState<Booking | null>(null)
+  const [moving, setMoving] = useState<Booking | null>(null)
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ['admin-bookings'],
@@ -144,6 +146,7 @@ export function AdminBookingsPage() {
             const passengerPhone = b.user?.phone || b.guestPhone
             const statusBadge = STATUS_BADGES[b.status]
             const canReassign = b.status === 'CONFIRMED' && ['SCHEDULED', 'BOARDING'].includes(b.trip.status)
+            const canMove = b.status === 'CONFIRMED' && b.paymentStatus === 'PAID'
             return (
               <div
                 key={b.id}
@@ -242,6 +245,14 @@ export function AdminBookingsPage() {
                         <UserRoundPen className="w-3.5 h-3.5" /> Reassign
                       </button>
                     )}
+                    {canMove && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMoving(b) }}
+                        className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                      >
+                        <CalendarClock className="w-3.5 h-3.5" /> Move trip
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); window.open(`/booking/confirmation/${b.ticketCode}?print=1`, '_blank') }}
                       className="flex items-center gap-1 text-xs text-gray-500 font-semibold hover:underline"
@@ -258,6 +269,7 @@ export function AdminBookingsPage() {
       )}
 
       {reassigning && <ReassignBookingDialog booking={reassigning} onClose={() => setReassigning(null)} />}
+      {moving && <MoveBookingDialog booking={moving} onClose={() => setMoving(null)} />}
     </div>
   )
 }

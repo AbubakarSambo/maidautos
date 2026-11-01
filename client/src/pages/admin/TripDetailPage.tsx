@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { ArrowLeft, Plus, Pencil, Snowflake, Wifi, UtensilsCrossed, MessageCircle, FileText } from 'lucide-react'
 import { tripsApi, carsApi, driversApi, bookingsApi } from '@/api'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Select } from '@/components/shared'
 import type { Trip, TripStatus, Car, Driver, Booking } from '@/types'
@@ -140,6 +140,10 @@ export function AdminTripDetailPage() {
   if (!trip) return <div className="flex items-center justify-center py-16 text-gray-500">Loading...</div>
 
   const nextStatuses = NEXT_STATUSES[trip.status] || []
+  // Bookings still holding a seat on this trip — cancelled or changed-away tickets aren't passengers.
+  const seated = passengers
+    .filter((b) => b.status !== 'CANCELLED' && b.status !== 'CHANGED')
+    .sort((a, b) => a.seatNumber - b.seatNumber)
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -341,29 +345,51 @@ export function AdminTripDetailPage() {
         </div>
         <p className="text-gray-500 text-sm mb-3">{trip.bookings?.length ?? 0} bookings · {trip.car.capacity - (trip.bookings?.length ?? 0)} seats left</p>
 
-        {trip.status === 'COMPLETED' && passengers.length > 0 && (
-          <div className="space-y-2 pt-3 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Send Thank-You Message</p>
-            {passengers.map((b) => {
+        {seated.length === 0 ? (
+          <p className="text-sm text-gray-400 pt-3 border-t border-gray-100">No passengers yet.</p>
+        ) : (
+          <div className="divide-y divide-gray-100 border-t border-gray-100">
+            {seated.map((b) => {
               const name = b.user ? `${b.user.firstName} ${b.user.lastName}` : b.guestName || 'Passenger'
-              const waLink = buildWaMeLink(b, upcomingRoutesText)
+              const phone = b.user?.phone || b.guestPhone
+              const email = b.user?.email || b.guestEmail
+              const nok = [b.nokName, b.nokPhone].filter(Boolean).join(' · ')
+              const waLink = trip.status === 'COMPLETED' ? buildWaMeLink(b, upcomingRoutesText) : null
+              const unpaid = b.paymentStatus !== 'PAID'
               return (
-                <div key={b.id} className="flex items-center justify-between gap-2 py-1.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
-                    <p className="text-xs text-gray-400">Seat {b.seatNumber} · {b.user?.phone || b.guestPhone || 'no phone on file'}</p>
+                <div key={b.id} className="flex items-start gap-3 py-3">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">
+                    {b.seatNumber}
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
+                      <span className="text-xs text-gray-400 font-mono">{b.ticketCode}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${unpaid ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}
+                      >
+                        {unpaid ? `${b.paymentStatus} · ${b.paymentMethod}` : `Paid · ${b.paymentMethod}`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {phone ? <a href={`tel:${phone}`} className="hover:underline">{phone}</a> : <span className="text-gray-400">No phone</span>}
+                      {email && <> · <a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {b.pickupStop.stop.name} → {b.dropoffStop.stop.name} · {formatCurrency(b.amount)}
+                    </p>
+                    {nok && <p className="text-xs text-gray-500">Next of kin: {nok}</p>}
                   </div>
-                  {waLink ? (
+                  {waLink && (
                     <a
                       href={waLink}
                       target="_blank"
                       rel="noopener noreferrer"
+                      title="Send thank-you message"
                       className="flex-shrink-0 flex items-center gap-1.5 bg-green-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:brightness-110 transition-colors"
                     >
                       <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                     </a>
-                  ) : (
-                    <span className="flex-shrink-0 text-xs text-gray-300">No phone</span>
                   )}
                 </div>
               )

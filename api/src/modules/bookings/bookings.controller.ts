@@ -4,6 +4,7 @@ import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ManageBookingLookupDto, ChangeBookingDto } from './dto/manage-booking.dto';
 import { ReassignBookingDto } from './dto/reassign-booking.dto';
+import { MoveBookingDto } from './dto/move-booking.dto';
 import { Public, OptionalAuth, Roles, CurrentUser } from '../../common';
 
 @ApiTags('Bookings')
@@ -88,6 +89,13 @@ export class BookingsController {
   @Patch(':id/reassign')
   reassign(@Param('id') id: string, @Body() dto: ReassignBookingDto, @CurrentUser() user: any) {
     return this.bookingsService.reassign(id, dto, user.id);
+  }
+
+  @ApiBearerAuth()
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Patch(':id/move')
+  move(@Param('id') id: string, @Body() dto: MoveBookingDto, @CurrentUser() user: any) {
+    return this.bookingsService.adminMove(id, dto, user.id);
   }
 
   @ApiBearerAuth()
