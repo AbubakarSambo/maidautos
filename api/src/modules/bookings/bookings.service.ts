@@ -184,6 +184,12 @@ export class BookingsService {
     if (isAdminBooked && dto.paymentMethod !== 'CASH') {
       throw new BadRequestException('Admin-recorded bookings must use Cash payment');
     }
+    // Trip status isn't advanced automatically, so the status check above doesn't stop
+    // someone booking a trip that left hours ago (e.g. from an old link or a stale page).
+    // Admins are exempt: they sometimes record a cash walk-in after the car has left.
+    if (!isAdminBooked && trip.departureDateTime.getTime() <= Date.now()) {
+      throw new BadRequestException('This trip has already departed — please choose a later trip');
+    }
 
     // Each seat gets its own passenger identity/contact — matters when one buyer books
     // seats for other people, not just themselves.

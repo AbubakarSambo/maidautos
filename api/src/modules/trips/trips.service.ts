@@ -118,11 +118,16 @@ export class TripsService {
     const d = new Date(date);
     const next = new Date(d);
     next.setDate(next.getDate() + 1);
+    // Trip status only changes when an admin updates it, so a trip that left this
+    // morning can still be SCHEDULED tonight. Never offer one whose departure time
+    // has passed — otherwise riders pay for a car that's already gone.
+    const now = new Date();
+    const notDeparted = (from: Date) => (from > now ? from : now);
 
     const trips = await this.prisma.trip.findMany({
       where: {
         routeId: { in: validRouteIds },
-        departureDateTime: { gte: d, lt: next },
+        departureDateTime: { gte: notDeparted(d), lt: next },
         status: { in: ['SCHEDULED', 'BOARDING'] },
       },
       include: searchInclude,
@@ -137,7 +142,7 @@ export class TripsService {
     const nextAvailable = await this.prisma.trip.findFirst({
       where: {
         routeId: { in: validRouteIds },
-        departureDateTime: { gte: next },
+        departureDateTime: { gte: notDeparted(next) },
         status: { in: ['SCHEDULED', 'BOARDING'] },
       },
       orderBy: { departureDateTime: 'asc' },
@@ -156,7 +161,7 @@ export class TripsService {
     const fallbackTrips = await this.prisma.trip.findMany({
       where: {
         routeId: { in: validRouteIds },
-        departureDateTime: { gte: fallbackDayStart, lt: fallbackDayEnd },
+        departureDateTime: { gte: notDeparted(fallbackDayStart), lt: fallbackDayEnd },
         status: { in: ['SCHEDULED', 'BOARDING'] },
       },
       include: searchInclude,
